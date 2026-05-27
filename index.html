@@ -3,601 +3,496 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IPTV Channel Picker</title>
+<title>📡 IPTV Channel Picker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0e1a;
-    --bg2: #0f1420;
-    --bg3: #141928;
-    --bg4: #1a2035;
-    --border: #1e2a45;
-    --border2: #243050;
-    --blue: #3b82f6;
-    --blue2: #60a5fa;
-    --blue-dim: #1d3a6b;
-    --green: #22c55e;
-    --green-dim: #14532d;
-    --amber: #f59e0b;
-    --amber-dim: #78350f;
-    --red: #ef4444;
-    --red-dim: #7f1d1d;
-    --text: #e2e8f0;
-    --text2: #94a3b8;
-    --text3: #475569;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Space Grotesk', sans-serif;
-    --radius: 8px;
-    --radius-lg: 12px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+:root {
+  --bg:      #080c14;
+  --bg2:     #0c1120;
+  --bg3:     #111827;
+  --bg4:     #1a2235;
+  --bg5:     #1e2a40;
+  --brd:     #1e2d48;
+  --brd2:    #253555;
+  --blue:    #3b82f6;
+  --blue2:   #60a5fa;
+  --blue3:   #93c5fd;
+  --bludim:  #1d3461;
+  --green:   #22c55e;
+  --grndim:  #14432d;
+  --amber:   #f59e0b;
+  --amndim:  #6b3d08;
+  --red:     #f43f5e;
+  --reddim:  #5c1524;
+  --txt:     #e2e8f0;
+  --txt2:    #94a3b8;
+  --txt3:    #4b6080;
+  --mono:    'JetBrains Mono', monospace;
+  --syne:    'Syne', sans-serif;
+  --r:       7px;
+  --rl:      11px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--mono);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
 
-  /* ── Header ── */
-  header {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 24px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .logo-icon {
-    width: 34px; height: 34px;
-    background: linear-gradient(135deg, var(--blue), #818cf8);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-  }
-  .logo-text {
-    font-family: var(--mono);
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text);
-    letter-spacing: -0.3px;
-  }
-  .logo-text span { color: var(--blue2); }
-  .header-badge {
-    font-family: var(--mono);
-    font-size: 10px;
-    background: var(--blue-dim);
-    color: var(--blue2);
-    padding: 3px 8px;
-    border-radius: 99px;
-    border: 1px solid var(--blue-dim);
-  }
-  .header-stats {
-    margin-left: auto;
-    display: flex;
-    gap: 16px;
-    align-items: center;
-  }
-  .stat-pill {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .stat-pill b { color: var(--text2); font-weight: 600; }
+/* ━━━━ HEADER ━━━━ */
+header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--brd);
+  padding: 0 20px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.logo-mark {
+  width: 32px; height: 32px;
+  background: var(--bludim);
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+}
+.logo-name {
+  font-family: var(--syne);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--txt);
+}
+.logo-name em { color: var(--blue2); font-style: normal; }
+.badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--bludim);
+  color: var(--blue3);
+  border: 1px solid var(--bludim);
+  font-weight: 700;
+}
+.badge.green { background: var(--grndim); color: var(--green); border-color: var(--grndim); }
+.spacer { flex: 1; }
+.hstat {
+  font-size: 11px;
+  color: var(--txt3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.hstat b { color: var(--txt2); }
 
-  /* ── Source Panel ── */
-  #src-panel {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 24px;
-  }
-  .tab-row {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 14px;
-  }
-  .tab-btn {
-    font-family: var(--mono);
-    font-size: 12px;
-    padding: 7px 16px;
-    border-radius: var(--radius);
-    border: 1px solid var(--border2);
-    background: transparent;
-    color: var(--text2);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .tab-btn:hover { background: var(--bg3); color: var(--text); }
-  .tab-btn.active {
-    background: var(--blue-dim);
-    border-color: var(--blue);
-    color: var(--blue2);
-    font-weight: 600;
-  }
-  .src-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
-  .field-group { display: flex; flex-direction: column; gap: 4px; }
-  .field-group label {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .field-group input, .field-group select {
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 12px;
-    padding: 8px 12px;
-    border-radius: var(--radius);
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .field-group input:focus { border-color: var(--blue); }
-  .field-group input::placeholder { color: var(--text3); }
-  .chk-row { display: flex; gap: 12px; align-items: center; padding-bottom: 2px; }
-  .chk-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text2);
-    cursor: pointer;
-  }
-  .chk-label input[type=checkbox] { accent-color: var(--blue); width: 14px; height: 14px; }
+/* ━━━━ SOURCE PANEL ━━━━ */
+#src {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--brd);
+  padding: 14px 20px;
+  flex-shrink: 0;
+}
+.tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+.tab {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--brd2);
+  background: transparent;
+  color: var(--txt3);
+  cursor: pointer;
+  transition: all .14s;
+}
+.tab:hover { color: var(--txt2); background: var(--bg3); }
+.tab.on { background: var(--bludim); border-color: var(--blue); color: var(--blue2); }
 
-  .btn-load {
-    background: var(--blue);
-    color: #fff;
-    border: none;
-    font-family: var(--mono);
-    font-size: 13px;
-    font-weight: 700;
-    padding: 9px 24px;
-    border-radius: var(--radius);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .btn-load:hover { background: var(--blue2); transform: translateY(-1px); }
-  .btn-load:active { transform: translateY(0); }
-  .btn-load:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+.fg { display: flex; flex-direction: column; gap: 4px; }
+.fg label { font-size: 10px; color: var(--txt3); text-transform: uppercase; letter-spacing: .5px; }
+.fg input, .fg select {
+  background: var(--bg3);
+  border: 1px solid var(--brd2);
+  color: var(--txt);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 11px;
+  border-radius: var(--r);
+  outline: none;
+  transition: border-color .14s;
+  height: 34px;
+}
+.fg input:focus { border-color: var(--blue); }
+.fg input::placeholder { color: var(--txt3); }
+.chks { display: flex; gap: 12px; align-items: center; height: 34px; }
+.chk {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--txt2); cursor: pointer;
+}
+.chk input { accent-color: var(--blue); width: 13px; height: 13px; }
 
-  .status-bar {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .status-msg {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text3);
-  }
-  .status-msg.ok { color: var(--green); }
-  .status-msg.err { color: var(--red); }
-  .progress-wrap {
-    flex: 1;
-    max-width: 300px;
-    height: 4px;
-    background: var(--bg4);
-    border-radius: 99px;
-    overflow: hidden;
-    display: none;
-  }
-  .progress-wrap.visible { display: block; }
-  .progress-bar {
-    height: 100%;
-    background: var(--blue);
-    border-radius: 99px;
-    transition: width 0.3s;
-    width: 0;
-  }
+.btn-load {
+  height: 34px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 20px;
+  border-radius: var(--r);
+  cursor: pointer;
+  display: flex; align-items: center; gap: 7px;
+  transition: all .14s;
+  white-space: nowrap;
+}
+.btn-load:hover { background: var(--blue2); }
+.btn-load:disabled { opacity: .45; cursor: not-allowed; }
 
-  /* ── Main Layout ── */
-  .main {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-    flex: 1;
-    min-height: 0;
-  }
-  .panel {
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid var(--border);
-    min-height: 0;
-  }
-  .panel:last-child { border-right: none; }
-  .panel-head {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .panel-title {
-    font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .panel-title-a { color: var(--blue2); }
-  .panel-title-b { color: var(--amber); }
-  .panel-title-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-  }
-  .controls-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .search-wrap { position: relative; flex: 1; min-width: 140px; }
-  .search-wrap input {
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 12px;
-    padding: 7px 12px 7px 32px;
-    border-radius: var(--radius);
-    outline: none;
-    width: 100%;
-    transition: border-color 0.15s;
-  }
-  .search-wrap input:focus { border-color: var(--blue); }
-  .search-wrap input::placeholder { color: var(--text3); }
-  .search-icon {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text3);
-    font-size: 13px;
-    pointer-events: none;
-  }
-  .sort-tabs { display: flex; gap: 3px; }
-  .sort-btn {
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 5px 10px;
-    border-radius: 5px;
-    border: 1px solid var(--border2);
-    background: transparent;
-    color: var(--text3);
-    cursor: pointer;
-    transition: all 0.12s;
-  }
-  .sort-btn.active {
-    background: var(--bg4);
-    color: var(--blue2);
-    border-color: var(--border2);
-  }
-  .sort-btn:hover { color: var(--text2); background: var(--bg3); }
+.sbar {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 20px;
+}
+.smsg {
+  font-size: 11px;
+  color: var(--txt3);
+  flex: 1;
+}
+.smsg.ok  { color: var(--green); }
+.smsg.err { color: var(--red); }
+.prog-wrap {
+  width: 220px; height: 3px;
+  background: var(--bg5);
+  border-radius: 99px;
+  overflow: hidden;
+  display: none;
+}
+.prog-wrap.vis { display: block; }
+.prog-bar {
+  height: 100%;
+  background: var(--blue);
+  border-radius: 99px;
+  transition: width .3s;
+  width: 0;
+}
 
-  .btn-icon {
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 5px 10px;
-    border-radius: 5px;
-    border: 1px solid var(--border2);
-    background: transparent;
-    color: var(--text2);
-    cursor: pointer;
-    transition: all 0.12s;
-    white-space: nowrap;
-  }
-  .btn-icon:hover { background: var(--bg3); color: var(--text); }
-  .btn-icon.green { border-color: var(--green-dim); color: var(--green); }
-  .btn-icon.green:hover { background: var(--green-dim); }
-  .btn-icon.red { border-color: var(--red-dim); color: var(--red); }
-  .btn-icon.red:hover { background: var(--red-dim); }
+.server-note {
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--txt3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.dot-green { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; }
 
-  .pag-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .pag-info {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    flex: 1;
-    text-align: center;
-  }
-  .pag-btn {
-    width: 28px; height: 28px;
-    border-radius: 5px;
-    border: 1px solid var(--border2);
-    background: transparent;
-    color: var(--text2);
-    cursor: pointer;
-    font-size: 12px;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.12s;
-  }
-  .pag-btn:hover { background: var(--bg3); }
-  .pag-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+/* ━━━━ MAIN 2-COL ━━━━ */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--brd);
+  overflow: hidden;
+}
+.panel:last-child { border-right: none; }
 
-  /* ── Channel List ── */
-  .channel-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 4px;
-  }
-  .channel-list::-webkit-scrollbar { width: 4px; }
-  .channel-list::-webkit-scrollbar-track { background: transparent; }
-  .channel-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+.phead {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--brd);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex-shrink: 0;
+}
+.ptitle {
+  font-family: var(--syne);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ptitle-a { color: var(--blue2); }
+.ptitle-b { color: var(--amber); }
+.ptitle-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 
-  .ch-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
-    border-radius: 6px;
-    transition: background 0.1s;
-    cursor: default;
-    border-bottom: 1px solid var(--bg4);
-  }
-  .ch-row:hover { background: var(--bg3); }
-  .ch-row.in-basket { background: #14532d22; }
-  .ch-num {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text3);
-    min-width: 30px;
-    text-align: right;
-  }
-  .ch-name {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text2);
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .ch-row.in-basket .ch-name { color: var(--green); }
-  .ch-group {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--text3);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 90px;
-  }
-  .btn-toggle {
-    font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 4px;
-    border: 1px solid var(--blue-dim);
-    background: transparent;
-    color: var(--blue2);
-    cursor: pointer;
-    transition: all 0.12s;
-    white-space: nowrap;
-    min-width: 62px;
-    text-align: center;
-  }
-  .btn-toggle:hover { background: var(--blue-dim); }
-  .btn-toggle.added {
-    border-color: var(--green-dim);
-    color: var(--green);
-    background: #14532d22;
-  }
-  .btn-toggle.added:hover { background: var(--green-dim); }
-  .empty-msg {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 60px 20px;
-    color: var(--text3);
-    font-family: var(--mono);
-    font-size: 12px;
-    text-align: center;
-  }
-  .empty-msg big { font-size: 28px; display: block; }
+.cr { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.sw { position: relative; flex: 1; min-width: 120px; }
+.sw input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--brd2);
+  color: var(--txt);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 6px 10px 6px 28px;
+  border-radius: var(--r);
+  outline: none;
+  height: 30px;
+}
+.sw input:focus { border-color: var(--blue); }
+.sw input::placeholder { color: var(--txt3); }
+.sw-ico {
+  position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+  color: var(--txt3); font-size: 12px; pointer-events: none;
+}
+.sort-row { display: flex; gap: 2px; }
+.sbtn {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 4px 9px;
+  border-radius: 5px;
+  border: 1px solid var(--brd2);
+  background: transparent;
+  color: var(--txt3);
+  cursor: pointer;
+  transition: all .12s;
+}
+.sbtn.on { background: var(--bg4); color: var(--blue2); }
+.sbtn:hover { color: var(--txt2); background: var(--bg3); }
 
-  /* ── Panel B export ── */
-  .export-area {
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .export-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .export-area .field-group input {
-    font-size: 11px;
-    padding: 6px 10px;
-  }
-  .btn-export {
-    font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 700;
-    padding: 7px 16px;
-    border-radius: var(--radius);
-    border: 1px solid;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .btn-export.m3u {
-    background: var(--amber-dim);
-    border-color: var(--amber);
-    color: var(--amber);
-  }
-  .btn-export.m3u:hover { background: #a16207; }
-  .btn-export.txt {
-    background: var(--bg3);
-    border-color: var(--border2);
-    color: var(--text2);
-  }
-  .btn-export.txt:hover { background: var(--bg4); }
-  .export-notice {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-  }
-  .export-notice.ok { color: var(--green); }
-  .export-notice.err { color: var(--red); }
+.ib {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--brd2);
+  background: transparent;
+  color: var(--txt2);
+  cursor: pointer;
+  transition: all .12s;
+  white-space: nowrap;
+  height: 26px;
+  display: flex; align-items: center;
+}
+.ib:hover { background: var(--bg3); color: var(--txt); }
+.ib.g { border-color: var(--grndim); color: var(--green); }
+.ib.g:hover { background: var(--grndim); }
+.ib.r { border-color: var(--reddim); color: var(--red); }
+.ib.r:hover { background: var(--reddim); }
 
-  /* ── empty states ── */
-  .placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    height: 100%;
-    min-height: 200px;
-    font-family: var(--mono);
-    color: var(--text3);
-    font-size: 12px;
-    text-align: center;
-    padding: 20px;
-  }
-  .placeholder-icon { font-size: 32px; opacity: 0.4; }
+.pgrow { display: flex; align-items: center; gap: 6px; flex: 1; }
+.pgbtn {
+  width: 26px; height: 26px;
+  border-radius: 5px;
+  border: 1px solid var(--brd2);
+  background: transparent;
+  color: var(--txt2);
+  cursor: pointer;
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .12s;
+  flex-shrink: 0;
+}
+.pgbtn:hover { background: var(--bg3); }
+.pgbtn:disabled { opacity: .25; cursor: not-allowed; }
+.pginfo {
+  font-size: 11px;
+  color: var(--txt3);
+  flex: 1;
+  text-align: center;
+}
 
-  /* spinner */
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spin { display: inline-block; animation: spin 1s linear infinite; }
+/* ━━━━ CHANNEL LIST ━━━━ */
+.clist {
+  flex: 1;
+  overflow-y: auto;
+  padding: 3px;
+}
+.clist::-webkit-scrollbar { width: 3px; }
+.clist::-webkit-scrollbar-track { background: transparent; }
+.clist::-webkit-scrollbar-thumb { background: var(--brd2); border-radius: 99px; }
 
-  /* CORS notice */
-  .cors-notice {
-    background: #78350f33;
-    border: 1px solid var(--amber-dim);
-    border-radius: var(--radius);
-    padding: 10px 14px;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--amber);
-    margin-top: 6px;
-    line-height: 1.6;
-    display: none;
-  }
-  .cors-notice.show { display: block; }
-  .cors-notice a { color: var(--blue2); }
+.crow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  transition: background .1s;
+  border-bottom: 1px solid var(--bg4);
+  min-height: 34px;
+}
+.crow:hover { background: var(--bg3); }
+.crow.inb { background: #14432d1a; }
+.cnum {
+  font-size: 10px; color: var(--txt3);
+  min-width: 28px; text-align: right; flex-shrink: 0;
+}
+.cname {
+  font-size: 11px; color: var(--txt2); flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.crow.inb .cname { color: var(--green); }
+.cgrp {
+  font-size: 10px; color: var(--txt3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 80px; flex-shrink: 0;
+}
+.btog {
+  font-family: var(--mono);
+  font-size: 10px; font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: 1px solid var(--bludim);
+  background: transparent;
+  color: var(--blue2);
+  cursor: pointer;
+  transition: all .12s;
+  white-space: nowrap;
+  min-width: 58px; text-align: center;
+  flex-shrink: 0;
+}
+.btog:hover { background: var(--bludim); }
+.btog.on { border-color: var(--grndim); color: var(--green); background: #14432d22; }
+.btog.on:hover { background: var(--grndim); }
 
-  /* responsive */
-  @media (max-width: 900px) {
-    .main { grid-template-columns: 1fr; }
-    .panel { border-right: none; border-bottom: 1px solid var(--border); }
-    .header-stats { display: none; }
-  }
+.empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px; padding: 50px 20px;
+  color: var(--txt3); font-size: 11px; text-align: center;
+}
+.empty-ico { font-size: 28px; opacity: .35; }
+
+/* ━━━━ EXPORT ━━━━ */
+.expo {
+  background: var(--bg2);
+  border-top: 1px solid var(--brd);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex-shrink: 0;
+}
+.expo .fg input { height: 28px; font-size: 11px; }
+.exp-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.bexp {
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--r);
+  border: 1px solid;
+  cursor: pointer;
+  transition: all .14s;
+  white-space: nowrap;
+}
+.bexp.m3u { background: var(--amndim); border-color: var(--amber); color: var(--amber); }
+.bexp.m3u:hover { filter: brightness(1.2); }
+.bexp.txt { background: var(--bg3); border-color: var(--brd2); color: var(--txt2); }
+.bexp.txt:hover { background: var(--bg4); }
+.enote { font-size: 10px; color: var(--txt3); }
+.enote.ok { color: var(--green); }
+.enote.err { color: var(--red); }
+
+/* ━━━━ LOADING SPINNER ━━━━ */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; animation: spin .8s linear infinite; }
+
+/* ━━━━ RESPONSIVE ━━━━ */
+@media (max-width: 860px) {
+  .main { grid-template-columns: 1fr; }
+  .panel { border-right: none; border-bottom: 1px solid var(--brd); }
+  .hstat { display: none; }
+}
 </style>
 </head>
 <body>
 
 <!-- ═══ HEADER ═══ -->
 <header>
-  <div class="logo">
-    <div class="logo-icon">📡</div>
-    <div class="logo-text">IPTV <span>Channel Picker</span></div>
-    <span class="header-badge">v3</span>
-  </div>
-  <div class="header-stats">
-    <div class="stat-pill">Channels: <b id="h-total">0</b></div>
-    <div class="stat-pill">Basket: <b id="h-basket">0</b></div>
-    <div class="stat-pill">Filter: <b id="h-filter">0</b></div>
-  </div>
+  <div class="logo-mark">📡</div>
+  <div class="logo-name">IPTV <em>Channel Picker</em></div>
+  <span class="badge">v4</span>
+  <span class="badge green">Server-Side</span>
+  <div class="spacer"></div>
+  <div class="hstat">Total: <b id="h-total">0</b></div>
+  <div class="hstat">Filter: <b id="h-filter">0</b></div>
+  <div class="hstat">Basket: <b id="h-basket">0</b></div>
 </header>
 
-<!-- ═══ SOURCE PANEL ═══ -->
-<div id="src-panel">
-  <div class="tab-row">
-    <button class="tab-btn active" onclick="setMode('xtream')">⚡ Xtream Code</button>
-    <button class="tab-btn" onclick="setMode('mac')">📟 MAC Portal</button>
-    <button class="tab-btn" onclick="setMode('m3u')">📄 URL M3U</button>
+<!-- ═══ SOURCE ═══ -->
+<div id="src">
+  <div class="tabs">
+    <button class="tab on" onclick="setMode('xt')">⚡ Xtream Code</button>
+    <button class="tab" onclick="setMode('mac')">📟 MAC Portal</button>
+    <button class="tab" onclick="setMode('m3u')">📄 URL M3U</button>
   </div>
 
   <!-- Xtream -->
-  <div id="form-xtream" class="src-form">
-    <div class="field-group">
-      <label>Server</label>
-      <input id="xt-srv" type="text" placeholder="http://domain:port" style="width:240px">
+  <div id="f-xt" class="form">
+    <div class="fg">
+      <label>Server URL</label>
+      <input id="xt-srv" type="text" placeholder="http://domain:port" style="width:220px">
     </div>
-    <div class="field-group">
+    <div class="fg">
       <label>Username</label>
-      <input id="xt-usr" type="text" placeholder="username" style="width:150px">
+      <input id="xt-usr" type="text" placeholder="username" style="width:140px">
     </div>
-    <div class="field-group">
+    <div class="fg">
       <label>Password</label>
-      <input id="xt-pwd" type="password" placeholder="password" style="width:150px">
+      <input id="xt-pwd" type="password" placeholder="password" style="width:140px">
     </div>
-    <div class="field-group">
+    <div class="fg">
       <label>Content</label>
-      <div class="chk-row">
-        <label class="chk-label"><input type="checkbox" id="xt-live" checked> Live TV</label>
-        <label class="chk-label"><input type="checkbox" id="xt-vod"> VOD</label>
+      <div class="chks">
+        <label class="chk"><input type="checkbox" id="xt-live" checked> Live TV</label>
+        <label class="chk"><input type="checkbox" id="xt-vod"> VOD</label>
       </div>
     </div>
-    <button class="btn-load" id="btn-load" onclick="doLoad()">
-      <span id="load-icon">↓</span> LOAD CHANNEL
-    </button>
+    <button class="btn-load" onclick="doLoad()">↓ LOAD</button>
   </div>
 
   <!-- MAC -->
-  <div id="form-mac" class="src-form" style="display:none">
-    <div class="field-group">
+  <div id="f-mac" class="form" style="display:none">
+    <div class="fg">
       <label>Portal URL</label>
-      <input id="mac-prt" type="text" placeholder="http://domain:port/c/" style="width:280px">
+      <input id="mac-prt" type="text" placeholder="http://domain:port/c/" style="width:260px">
     </div>
-    <div class="field-group">
+    <div class="fg">
       <label>MAC Address</label>
-      <input id="mac-adr" type="text" placeholder="00:1A:79:XX:XX:XX" style="width:200px">
+      <input id="mac-adr" type="text" placeholder="00:1A:79:XX:XX:XX" style="width:185px">
     </div>
-    <button class="btn-load" onclick="doLoad()">
-      <span>↓</span> LOAD CHANNEL
-    </button>
+    <button class="btn-load" onclick="doLoad()">↓ LOAD</button>
   </div>
 
   <!-- M3U -->
-  <div id="form-m3u" class="src-form" style="display:none">
-    <div class="field-group">
+  <div id="f-m3u" class="form" style="display:none">
+    <div class="fg">
       <label>Playlist URL</label>
-      <input id="m3u-url" type="text" placeholder="http://domain/playlist.m3u" style="width:400px">
+      <input id="m3u-url" type="text" placeholder="http://domain/playlist.m3u" style="width:380px">
     </div>
-    <button class="btn-load" onclick="doLoad()">
-      <span>↓</span> LOAD CHANNEL
-    </button>
+    <button class="btn-load" onclick="doLoad()">↓ LOAD</button>
   </div>
 
-  <div class="status-bar">
-    <div class="status-msg" id="status-msg">⬆ Pilih sumber, isi kredensial → LOAD CHANNEL</div>
-    <div class="progress-wrap" id="prog-wrap"><div class="progress-bar" id="prog-bar"></div></div>
+  <div class="sbar">
+    <div class="smsg" id="smsg">⬆ Pilih sumber → isi kredensial → LOAD</div>
+    <div class="prog-wrap" id="pwrap"><div class="prog-bar" id="pbar"></div></div>
   </div>
-  <div class="cors-notice" id="cors-notice">
-    ⚠️ <b>CORS Error</b> — Browser memblokir request langsung ke server IPTV dari halaman web.<br>
-    Gunakan <b>proxy CORS</b> atau jalankan via <b>ekstensi browser</b>. Untuk produksi, gunakan backend proxy (Node.js/Vercel Serverless Function).<br>
-    Alternatif: <a href="#" onclick="showProxyTip()">lihat cara setup proxy</a>.
+  <div class="server-note">
+    <span class="dot-green"></span>
+    Semua request diproses di <b>server Vercel</b> — tidak ada CORS issue, IP browser tidak terekspos ke server IPTV
   </div>
 </div>
 
@@ -606,83 +501,65 @@
 
   <!-- PANEL A -->
   <div class="panel">
-    <div class="panel-head">
-      <div class="panel-title panel-title-a">
-        <span class="panel-title-dot"></span>
-        PANEL A — Semua Channel
-      </div>
-      <div class="controls-row">
-        <div class="search-wrap">
-          <span class="search-icon">🔍</span>
-          <input id="qa" type="text" placeholder="Cari nama channel..." oninput="onQA()">
-        </div>
-        <div class="sort-tabs">
-          <button class="sort-btn active" onclick="setSort('az',this)">A→Z</button>
-          <button class="sort-btn" onclick="setSort('za',this)">Z→A</button>
-          <button class="sort-btn" onclick="setSort('num',this)">1→9</button>
+    <div class="phead">
+      <div class="ptitle ptitle-a"><span class="ptitle-dot"></span>PANEL A — Semua Channel</div>
+      <div class="cr">
+        <div class="sw"><span class="sw-ico">🔍</span><input id="qa" placeholder="Cari channel..." oninput="onQA()"></div>
+        <div class="sort-row">
+          <button class="sbtn on" onclick="setSort('az',this)">A→Z</button>
+          <button class="sbtn" onclick="setSort('za',this)">Z→A</button>
+          <button class="sbtn" onclick="setSort('num',this)">1→9</button>
         </div>
       </div>
-      <div class="controls-row">
-        <div class="pag-row" style="flex:1">
-          <button class="pag-btn" id="pA-prev" onclick="goPage('a',-1)" disabled>‹</button>
-          <div class="pag-info" id="pA-info">—</div>
-          <button class="pag-btn" id="pA-next" onclick="goPage('a',+1)" disabled>›</button>
+      <div class="cr">
+        <div class="pgrow">
+          <button class="pgbtn" id="pA-p" onclick="goPage('a',-1)" disabled>‹</button>
+          <div class="pginfo" id="pA-i">—</div>
+          <button class="pgbtn" id="pA-n" onclick="goPage('a',+1)" disabled>›</button>
         </div>
-        <button class="btn-icon green" onclick="addPage()">⊕ Halaman ini</button>
-        <button class="btn-icon green" onclick="addAll()">⊕ Semua</button>
+        <button class="ib g" onclick="addPage()">⊕ Hal. ini</button>
+        <button class="ib g" onclick="addAll()">⊕ Semua</button>
       </div>
     </div>
-    <div class="channel-list" id="list-a">
-      <div class="placeholder">
-        <div class="placeholder-icon">📡</div>
-        Isi sumber lalu klik LOAD CHANNEL
-      </div>
+    <div class="clist" id="la">
+      <div class="empty"><div class="empty-ico">📡</div>Isi sumber → klik LOAD</div>
     </div>
   </div>
 
   <!-- PANEL B -->
   <div class="panel">
-    <div class="panel-head">
-      <div class="panel-title panel-title-b">
-        <span class="panel-title-dot"></span>
-        PANEL B — Keranjang
+    <div class="phead">
+      <div class="ptitle ptitle-b"><span class="ptitle-dot"></span>PANEL B — Keranjang</div>
+      <div class="cr">
+        <div class="sw"><span class="sw-ico">🔍</span><input id="qb" placeholder="Cari keranjang..." oninput="onQB()"></div>
+        <button class="ib r" onclick="clearB()">🗑 Kosongkan</button>
       </div>
-      <div class="controls-row">
-        <div class="search-wrap">
-          <span class="search-icon">🔍</span>
-          <input id="qb" type="text" placeholder="Cari di keranjang..." oninput="onQB()">
-        </div>
-        <button class="btn-icon red" onclick="clearBasket()">🗑 Kosongkan</button>
-      </div>
-      <div class="controls-row">
-        <div class="pag-row" style="flex:1">
-          <button class="pag-btn" id="pB-prev" onclick="goPage('b',-1)" disabled>‹</button>
-          <div class="pag-info" id="pB-info">—</div>
-          <button class="pag-btn" id="pB-next" onclick="goPage('b',+1)" disabled>›</button>
+      <div class="cr">
+        <div class="pgrow">
+          <button class="pgbtn" id="pB-p" onclick="goPage('b',-1)" disabled>‹</button>
+          <div class="pginfo" id="pB-i">—</div>
+          <button class="pgbtn" id="pB-n" onclick="goPage('b',+1)" disabled>›</button>
         </div>
       </div>
     </div>
-    <div class="channel-list" id="list-b">
-      <div class="placeholder">
-        <div class="placeholder-icon">🛒</div>
-        Keranjang kosong.<br>Pilih channel dari Panel A.
-      </div>
+    <div class="clist" id="lb">
+      <div class="empty"><div class="empty-ico">🛒</div>Keranjang kosong</div>
     </div>
-    <div class="export-area">
-      <div class="export-row">
-        <div class="field-group">
-          <label>File name</label>
-          <input id="exp-fname" type="text" value="playlist.m3u" style="width:180px">
+    <div class="expo">
+      <div class="exp-row">
+        <div class="fg">
+          <label>Nama File</label>
+          <input id="exp-f" type="text" value="playlist.m3u" style="width:170px">
         </div>
-        <div class="field-group">
+        <div class="fg">
           <label>EPG URL (opsional)</label>
-          <input id="exp-epg" type="text" placeholder="https://..." style="width:220px">
+          <input id="exp-epg" type="text" placeholder="https://..." style="width:210px">
         </div>
       </div>
-      <div class="export-row">
-        <button class="btn-export m3u" onclick="exportM3U()">💾 Export M3U</button>
-        <button class="btn-export txt" onclick="exportTXT()">📄 Export TXT</button>
-        <div class="export-notice" id="exp-notice"></div>
+      <div class="exp-row">
+        <button class="bexp m3u" onclick="expM3U()">💾 Export M3U</button>
+        <button class="bexp txt" onclick="expTXT()">📄 Export TXT</button>
+        <span class="enote" id="enote"></span>
       </div>
     </div>
   </div>
@@ -690,170 +567,245 @@
 </div>
 
 <script>
-// ══════════════════════════════════════
+// ════════════════════════════════════
 //  STATE
-// ══════════════════════════════════════
+// ════════════════════════════════════
 const G = {
-  channels: [],
-  basket: new Set(),
-  sort: 'az',
-  qA: '',
-  qB: '',
-  pageA: 0,
-  pageB: 0,
-  filteredA: [],
-  filteredB: [],
-  mode: 'xtream',
+  mode:'xt', channels:[], basket:new Set(),
+  sort:'az', qA:'', qB:'',
+  pageA:0, pageB:0, fA:[], fB:[],
 };
-const PAGE = 80;
+const PG = 80;
+const API = '/api/iptv';
 
-// ══════════════════════════════════════
-//  MODES
-// ══════════════════════════════════════
+// ════════════════════════════════════
+//  UI helpers
+// ════════════════════════════════════
 function setMode(m) {
   G.mode = m;
-  document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    b.classList.toggle('active', ['xtream','mac','m3u'][i] === m);
+  ['xt','mac','m3u'].forEach((id,i)=>{
+    document.querySelector('.tabs .tab:nth-child('+(i+1)+')').className = 'tab'+(m===id?' on':'');
+    document.getElementById('f-'+id).style.display = m===id ? 'flex' : 'none';
   });
-  document.getElementById('form-xtream').style.display = m==='xtream' ? 'flex' : 'none';
-  document.getElementById('form-mac').style.display    = m==='mac'    ? 'flex' : 'none';
-  document.getElementById('form-m3u').style.display   = m==='m3u'    ? 'flex' : 'none';
 }
 
-// ══════════════════════════════════════
-//  HELPERS
-// ══════════════════════════════════════
-function okUrl(u) {
-  try { const r=new URL(u.trim()); return ['http:','https:'].includes(r.protocol); } catch{return false;}
+function setP(pct, msg, cls='') {
+  const pw=document.getElementById('pwrap');
+  document.getElementById('pbar').style.width = pct+'%';
+  pw.className = 'prog-wrap'+(pct>0?' vis':'');
+  const el=document.getElementById('smsg');
+  el.textContent = msg;
+  el.className = 'smsg'+( cls ? ' '+cls : '');
 }
-function okMac(m) {
-  return /^([0-9A-Fa-f]{2}[:\-]){5}([0-9A-Fa-f]{2})$/.test((m||'').trim());
+
+// ════════════════════════════════════
+//  SERVER CALL
+// ════════════════════════════════════
+async function api(body) {
+  const r = await fetch(API, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body),
+  });
+  const d = await r.json();
+  if(!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+  return d;
 }
-function sortKey(name) {
-  const n=(name||'').trim();
-  if(!n) return [2,''];
+
+// ════════════════════════════════════
+//  LOAD
+// ════════════════════════════════════
+async function doLoad() {
+  G.channels=[]; G.basket=new Set(); G.pageA=0; G.pageB=0;
+  G.qA=''; G.qB='';
+  document.getElementById('qa').value='';
+  document.getElementById('qb').value='';
+  rebuildFilters(); renderA(); renderB();
+
+  const allBtns = document.querySelectorAll('.btn-load');
+  allBtns.forEach(b=>b.disabled=true);
+  setP(5,'🔄 Menghubungkan ke server...');
+
+  try {
+    let ch=[];
+    const m=G.mode;
+
+    if(m==='xt') {
+      const base = document.getElementById('xt-srv').value.trim().replace(/\/$/,'');
+      const u    = document.getElementById('xt-usr').value.trim();
+      const p    = document.getElementById('xt-pwd').value.trim();
+      const live = document.getElementById('xt-live').checked;
+      const vod  = document.getElementById('xt-vod').checked;
+      if(!base||!u) throw new Error('Server atau username kosong');
+      if(!live&&!vod) throw new Error('Pilih Live TV dan/atau VOD');
+
+      setP(15,'🔐 Auth Xtream...');
+      try {
+        const auth = await api({action:'xtream_auth', base, user:u, pass:p});
+        const ui   = auth.data?.user_info || {};
+        if(ui.auth===0) throw new Error('Login gagal — username/password salah');
+        setP(25, `✓ ${ui.status||'OK'} · exp: ${String(ui.exp_date||'?').substring(0,10)}`);
+      } catch(e) {
+        if(e.message.includes('Login gagal')) throw e;
+        setP(25,'⚠️ Info akun dilewati, lanjut...');
+      }
+
+      if(live) {
+        setP(30,'📺 Mengambil Live TV...');
+        const r = await api({action:'xtream_live', base, user:u, pass:p});
+        ch.push(...r.channels);
+        setP(60,`Live: ${r.count.toLocaleString()} channel`);
+      }
+      if(vod) {
+        setP(65,'🎬 Mengambil VOD...');
+        const r = await api({action:'xtream_vod', base, user:u, pass:p});
+        ch.push(...r.channels);
+        setP(85,`Total: ${ch.length.toLocaleString()} channel`);
+      }
+
+    } else if(m==='mac') {
+      const portal = document.getElementById('mac-prt').value.trim();
+      const mac    = document.getElementById('mac-adr').value.trim().toUpperCase();
+      if(!portal||!mac) throw new Error('Portal URL dan MAC wajib diisi');
+
+      setP(15,'🔄 MAC Auth...');
+      const authR = await api({action:'mac_auth', portal, mac});
+      setP(35,'✓ Auth OK — mengambil channel...');
+      const chanR = await api({action:'mac_channels',
+                               portal: authR.portal,
+                               mac: authR.mac,
+                               token: authR.token||''});
+      ch = chanR.channels;
+      setP(85,`${ch.length.toLocaleString()} channel`);
+
+    } else {
+      const url = document.getElementById('m3u-url').value.trim();
+      if(!url) throw new Error('URL M3U tidak boleh kosong');
+      setP(20,'🔄 Mengunduh & parsing M3U...');
+      const r = await api({action:'m3u_fetch', url});
+      ch = r.channels;
+      setP(85,`${ch.length.toLocaleString()} channel diparsed`);
+    }
+
+    if(!ch.length) throw new Error('Tidak ada channel ditemukan');
+
+    const keep=['name','group','logo','epg_id','num','stream_id','url'];
+    G.channels = ch.map(e => { const o={}; keep.forEach(k=>o[k]=e[k]||''); return o; });
+    G.basket   = new Set();
+    rebuildFilters(); renderA(); renderB();
+
+    setP(100, `✅ ${G.channels.length.toLocaleString()} channel dimuat · ${new Date().toLocaleTimeString()}`, 'ok');
+    setTimeout(()=>{ document.getElementById('pwrap').className='prog-wrap'; }, 2500);
+
+  } catch(e) {
+    setP(0, '❌ ' + e.message, 'err');
+    document.getElementById('pwrap').className='prog-wrap';
+    rebuildFilters(); renderA(); renderB();
+  } finally {
+    allBtns.forEach(b=>b.disabled=false);
+  }
+}
+
+// ════════════════════════════════════
+//  FILTERS / SORT
+// ════════════════════════════════════
+function sk(n) {
+  n=(n||'').trim();
+  if(!n) return[2,''];
   const c=n[0];
-  if(/\d/.test(c)) return [0,n.toLowerCase()];
-  if(/[a-zA-Z]/.test(c)) return [1,n.toLowerCase()];
-  return [2,n.toLowerCase()];
+  if(/\d/.test(c)) return[0,n.toLowerCase()];
+  if(/[a-zA-Z]/.test(c)) return[1,n.toLowerCase()];
+  return[2,n.toLowerCase()];
 }
-function numKey(name) {
-  const n=(name||'').trim();
+function nk(n) {
+  n=(n||'').trim();
   const m=n.match(/^(\d+)/);
-  return m ? [0,parseInt(m[1]),n.toLowerCase()] : [1,0,n.toLowerCase()];
+  return m?[0,parseInt(m[1]),n.toLowerCase()]:[1,0,n.toLowerCase()];
 }
-function cmp(a,b) { for(let i=0;i<a.length;i++){if(a[i]<b[i])return-1;if(a[i]>b[i])return 1;} return 0; }
-
-function setProgress(pct, msg, cls='') {
-  const bar=document.getElementById('prog-bar');
-  const wrap=document.getElementById('prog-wrap');
-  const lbl=document.getElementById('status-msg');
-  bar.style.width=pct+'%';
-  wrap.className='progress-wrap'+(pct>0?' visible':'');
-  lbl.textContent=msg;
-  lbl.className='status-msg '+(cls||'');
-}
+function cmp(a,b) { for(let i=0;i<a.length;i++){if(a[i]<b[i])return -1;if(a[i]>b[i])return 1;} return 0; }
 
 function rebuildFilters() {
   const qA=G.qA.toLowerCase();
   let idx=[...G.channels.keys()];
   if(qA) idx=idx.filter(i=>G.channels[i].name.toLowerCase().includes(qA));
-  if(G.sort==='az') idx.sort((a,b)=>cmp(sortKey(G.channels[a].name),sortKey(G.channels[b].name)));
-  else if(G.sort==='za') idx.sort((a,b)=>cmp(sortKey(G.channels[b].name),sortKey(G.channels[a].name)));
-  else idx.sort((a,b)=>cmp(numKey(G.channels[a].name),numKey(G.channels[b].name)));
-  G.filteredA=idx;
+  if(G.sort==='az')  idx.sort((a,b)=>cmp(sk(G.channels[a].name), sk(G.channels[b].name)));
+  else if(G.sort==='za') idx.sort((a,b)=>cmp(sk(G.channels[b].name), sk(G.channels[a].name)));
+  else idx.sort((a,b)=>cmp(nk(G.channels[a].name), nk(G.channels[b].name)));
+  G.fA = idx;
 
   const qB=G.qB.toLowerCase();
   let bi=[...G.basket].filter(i=>i<G.channels.length&&(!qB||G.channels[i].name.toLowerCase().includes(qB)));
-  bi.sort((a,b)=>cmp(sortKey(G.channels[a].name),sortKey(G.channels[b].name)));
-  G.filteredB=bi;
+  bi.sort((a,b)=>cmp(sk(G.channels[a].name), sk(G.channels[b].name)));
+  G.fB = bi;
 
-  document.getElementById('h-total').textContent=G.channels.length.toLocaleString();
-  document.getElementById('h-basket').textContent=G.basket.size.toLocaleString();
-  document.getElementById('h-filter').textContent=G.filteredA.length.toLocaleString();
+  document.getElementById('h-total').textContent  = G.channels.length.toLocaleString();
+  document.getElementById('h-basket').textContent = G.basket.size.toLocaleString();
+  document.getElementById('h-filter').textContent = G.fA.length.toLocaleString();
 }
 
-function pages(arr) { return Math.max(1, Math.ceil(arr.length/PAGE)); }
+function pages(arr) { return Math.max(1, Math.ceil(arr.length/PG)); }
 
-// ══════════════════════════════════════
+// ════════════════════════════════════
 //  RENDER
-// ══════════════════════════════════════
+// ════════════════════════════════════
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function renderA() {
-  const fa=G.filteredA;
-  const npg=pages(fa);
-  G.pageA=Math.max(0,Math.min(G.pageA,npg-1));
-  const pg=G.pageA;
-  const start=pg*PAGE;
-  const slc=fa.slice(start,start+PAGE);
+  const fa=G.fA, npg=pages(fa);
+  G.pageA = Math.max(0, Math.min(G.pageA, npg-1));
+  const pg=G.pageA, start=pg*PG, slc=fa.slice(start,start+PG);
 
-  document.getElementById('pA-info').textContent=`${pg+1} / ${npg}`;
-  document.getElementById('pA-prev').disabled=(pg===0);
-  document.getElementById('pA-next').disabled=(pg>=npg-1);
+  document.getElementById('pA-i').textContent = `${pg+1} / ${npg}`;
+  document.getElementById('pA-p').disabled = pg===0;
+  document.getElementById('pA-n').disabled = pg>=npg-1;
 
-  const el=document.getElementById('list-a');
-  if(!slc.length) {
-    el.innerHTML='<div class="placeholder"><div class="placeholder-icon">🔍</div>Tidak ada channel ditemukan</div>';
-    return;
-  }
-  el.innerHTML=slc.map(i=>{
-    const e=G.channels[i];
-    const inB=G.basket.has(i);
-    const name=esc(e.name.substring(0,80));
-    const grp=esc((e.group||'').substring(0,24));
-    return `<div class="ch-row${inB?' in-basket':''}">
-      <span class="ch-num">${start+slc.indexOf(i)+1}</span>
-      <span class="ch-name" title="${name}">${name}</span>
-      ${grp?`<span class="ch-group" title="${grp}">${grp}</span>`:''}
-      <button class="btn-toggle${inB?' added':''}" onclick="toggle(${i})">${inB?'✓ Ada':'+ Pilih'}</button>
+  const el=document.getElementById('la');
+  if(!slc.length) { el.innerHTML='<div class="empty"><div class="empty-ico">🔍</div>Tidak ada channel</div>'; return; }
+
+  el.innerHTML = slc.map((i,idx)=>{
+    const e=G.channels[i], inB=G.basket.has(i);
+    return `<div class="crow${inB?' inb':''}">
+      <span class="cnum">${start+idx+1}</span>
+      <span class="cname" title="${esc(e.name)}">${esc(e.name.substring(0,90))}</span>
+      ${e.group?`<span class="cgrp" title="${esc(e.group)}">${esc(e.group.substring(0,20))}</span>`:''}
+      <button class="btog${inB?' on':''}" onclick="toggle(${i})">${inB?'✓ Ada':'+ Pilih'}</button>
     </div>`;
   }).join('');
 }
 
 function renderB() {
-  const fb=G.filteredB;
-  const npg=pages(fb);
-  G.pageB=Math.max(0,Math.min(G.pageB,npg-1));
-  const pg=G.pageB;
-  const start=pg*PAGE;
-  const slc=fb.slice(start,start+PAGE);
+  const fb=G.fB, npg=pages(fb);
+  G.pageB = Math.max(0, Math.min(G.pageB, npg-1));
+  const pg=G.pageB, start=pg*PG, slc=fb.slice(start,start+PG);
 
-  document.getElementById('pB-info').textContent=`${pg+1} / ${npg}`;
-  document.getElementById('pB-prev').disabled=(pg===0);
-  document.getElementById('pB-next').disabled=(pg>=npg-1);
+  document.getElementById('pB-i').textContent = `${pg+1} / ${npg}`;
+  document.getElementById('pB-p').disabled = pg===0;
+  document.getElementById('pB-n').disabled = pg>=npg-1;
 
-  const el=document.getElementById('list-b');
-  if(!slc.length) {
-    el.innerHTML='<div class="placeholder"><div class="placeholder-icon">🛒</div>Keranjang kosong.<br>Pilih channel dari Panel A.</div>';
-    return;
-  }
-  el.innerHTML=slc.map(i=>{
+  const el=document.getElementById('lb');
+  if(!slc.length) { el.innerHTML='<div class="empty"><div class="empty-ico">🛒</div>Keranjang kosong.<br>Pilih dari Panel A.</div>'; return; }
+
+  el.innerHTML = slc.map((i,idx)=>{
     const e=G.channels[i];
-    const name=esc(e.name.substring(0,80));
-    const grp=esc((e.group||'').substring(0,24));
-    return `<div class="ch-row in-basket">
-      <span class="ch-num">${slc.indexOf(i)+1}</span>
-      <span class="ch-name" title="${name}">${name}</span>
-      ${grp?`<span class="ch-group">${grp}</span>`:''}
-      <button class="btn-toggle added" onclick="remove(${i})">✕ Hapus</button>
+    return `<div class="crow inb">
+      <span class="cnum">${start+idx+1}</span>
+      <span class="cname">${esc(e.name.substring(0,90))}</span>
+      ${e.group?`<span class="cgrp">${esc(e.group.substring(0,20))}</span>`:''}
+      <button class="btog on" onclick="remove(${i})">✕ Hapus</button>
     </div>`;
   }).join('');
 }
 
-function renderBoth() { rebuildFilters(); renderA(); renderB(); }
+function both() { rebuildFilters(); renderA(); renderB(); }
 
-function esc(s) {
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ══════════════════════════════════════
-//  INTERACTIONS
-// ══════════════════════════════════════
-function toggle(i) {
-  if(G.basket.has(i)) G.basket.delete(i); else G.basket.add(i);
-  renderBoth();
-}
-function remove(i) { G.basket.delete(i); renderBoth(); }
-function clearBasket() { G.basket.clear(); G.pageB=0; renderBoth(); }
+// ════════════════════════════════════
+//  ACTIONS
+// ════════════════════════════════════
+function toggle(i) { G.basket.has(i)?G.basket.delete(i):G.basket.add(i); both(); }
+function remove(i) { G.basket.delete(i); both(); }
+function clearB()  { G.basket.clear(); G.pageB=0; both(); }
 function goPage(p,d) {
   if(p==='a'){G.pageA=Math.max(0,G.pageA+d);renderA();}
   else{G.pageB=Math.max(0,G.pageB+d);renderB();}
@@ -862,262 +814,64 @@ function onQA() { G.qA=document.getElementById('qa').value; G.pageA=0; rebuildFi
 function onQB() { G.qB=document.getElementById('qb').value; G.pageB=0; rebuildFilters(); renderB(); }
 function setSort(s,el) {
   G.sort=s; G.pageA=0;
-  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
+  document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
   rebuildFilters(); renderA();
 }
 function addPage() {
-  const slc=G.filteredA.slice(G.pageA*PAGE,(G.pageA+1)*PAGE);
-  slc.forEach(i=>G.basket.add(i));
-  renderBoth();
+  G.fA.slice(G.pageA*PG,(G.pageA+1)*PG).forEach(i=>G.basket.add(i));
+  both();
 }
-function addAll() { G.filteredA.forEach(i=>G.basket.add(i)); renderBoth(); }
+function addAll() { G.fA.forEach(i=>G.basket.add(i)); both(); }
 
-// ══════════════════════════════════════
+// ════════════════════════════════════
 //  EXPORT
-// ══════════════════════════════════════
-function getBasketEntries() {
+// ════════════════════════════════════
+function getEntries() {
   return [...G.basket].filter(i=>i<G.channels.length).map(i=>G.channels[i]);
 }
-function buildM3U(entries, epg) {
-  let lines=['#EXTM3U'+(epg?` x-tvg-url="${epg}"`:'')];
+function buildM3U(entries,epg) {
+  let ln=['#EXTM3U'+(epg?` x-tvg-url="${epg}"`:'')];
   entries.forEach(e=>{
     let x='#EXTINF:-1';
-    if(e.epg_id)  x+=` tvg-id="${e.epg_id}"`;
+    if(e.epg_id) x+=` tvg-id="${e.epg_id}"`;
     x+=` tvg-name="${e.name}"`;
-    if(e.logo)    x+=` tvg-logo="${e.logo}"`;
-    if(e.group)   x+=` group-title="${e.group}"`;
-    if(e.num)     x+=` tvg-chno="${e.num}"`;
+    if(e.logo)   x+=` tvg-logo="${e.logo}"`;
+    if(e.group)  x+=` group-title="${e.group}"`;
+    if(e.num)    x+=` tvg-chno="${e.num}"`;
     x+=`,${e.name}`;
-    lines.push(x, e.url||'');
+    ln.push(x, e.url||'');
   });
-  return lines.join('\n');
+  return ln.join('\n');
 }
-function download(fname, content, type) {
-  const blob=new Blob([content],{type});
+function dl(fname,content,type) {
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=fname;
-  a.click();
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=fname; a.click();
   URL.revokeObjectURL(a.href);
 }
-function exportM3U() {
-  const entries=getBasketEntries();
-  const n=document.getElementById('exp-notice');
-  if(!entries.length){ n.textContent='⚠️ Keranjang kosong!'; n.className='export-notice err'; return; }
-  let fname=document.getElementById('exp-fname').value.trim()||'playlist.m3u';
-  if(!fname.endsWith('.m3u')) fname+='.m3u';
-  const epg=document.getElementById('exp-epg').value.trim();
-  download(fname, buildM3U(entries,epg), 'audio/x-mpegurl');
-  n.textContent=`✅ ${fname} — ${entries.length.toLocaleString()} channel`;
-  n.className='export-notice ok';
+function setNote(msg,cls) {
+  const n=document.getElementById('enote');
+  n.textContent=msg; n.className='enote'+(cls?' '+cls:'');
 }
-function exportTXT() {
-  const entries=getBasketEntries();
-  const n=document.getElementById('exp-notice');
-  if(!entries.length){ n.textContent='⚠️ Keranjang kosong!'; n.className='export-notice err'; return; }
-  let fname=(document.getElementById('exp-fname').value.trim().replace('.m3u','')||'channels')+'.txt';
-  const txt=entries.map((e,i)=>`${i+1}. ${e.name} | ${e.url||''}`).join('\n');
-  download(fname, txt, 'text/plain');
-  n.textContent=`✅ ${fname} — ${entries.length.toLocaleString()} baris`;
-  n.className='export-notice ok';
+function expM3U() {
+  const e=getEntries();
+  if(!e.length) return setNote('⚠️ Keranjang kosong!','err');
+  let fn=document.getElementById('exp-f').value.trim()||'playlist.m3u';
+  if(!fn.endsWith('.m3u')) fn+='.m3u';
+  dl(fn, buildM3U(e, document.getElementById('exp-epg').value.trim()), 'audio/x-mpegurl');
+  setNote(`✅ ${fn} — ${e.length.toLocaleString()} channel`,'ok');
 }
-
-// ══════════════════════════════════════
-//  FETCH — XTREAM
-// ══════════════════════════════════════
-async function fetchXtream(base, u, p, live, vod) {
-  let ch=[];
-  if(live) {
-    setProgress(30,'📺 Mengambil Live TV...');
-    // Fetch categories
-    let cats={};
-    try {
-      const r=await fetch(`${base}/player_api.php?username=${u}&password=${p}&action=get_live_categories`);
-      const data=await r.json();
-      data.forEach(c=>cats[String(c.category_id)]=c.category_name);
-    } catch(e){}
-    setProgress(45,'📺 Mengambil daftar channel...');
-    const r=await fetch(`${base}/player_api.php?username=${u}&password=${p}&action=get_live_streams`);
-    const data=await r.json();
-    data.forEach(c=>{
-      const sid=c.stream_id, cid=String(c.category_id||'');
-      ch.push({name:c.name||'?',group:cats[cid]||'Live',logo:c.stream_icon||'',
-               epg_id:c.epg_channel_id||'',num:String(c.num||''),
-               stream_id:sid,url:`${base}/live/${u}/${p}/${sid}.ts`});
-    });
-    setProgress(60,`Live TV: ${ch.length.toLocaleString()} channel`);
-  }
-  if(vod) {
-    setProgress(65,'🎬 Mengambil VOD...');
-    let cats={};
-    try {
-      const r=await fetch(`${base}/player_api.php?username=${u}&password=${p}&action=get_vod_categories`);
-      const data=await r.json();
-      data.forEach(c=>cats[String(c.category_id)]=c.category_name);
-    } catch(e){}
-    const r=await fetch(`${base}/player_api.php?username=${u}&password=${p}&action=get_vod_streams`);
-    const data=await r.json();
-    data.forEach(v=>{
-      const sid=v.stream_id, cid=String(v.category_id||'');
-      ch.push({name:v.name||'?',group:cats[cid]||'VOD',logo:v.stream_icon||'',
-               epg_id:'',num:'',stream_id:sid,url:`${base}/movie/${u}/${p}/${sid}.mp4`});
-    });
-    setProgress(85,`Total: ${ch.length.toLocaleString()} channel`);
-  }
-  return ch;
-}
-
-// ══════════════════════════════════════
-//  FETCH — M3U
-// ══════════════════════════════════════
-function parseM3U(text) {
-  const ch=[]; let meta={};
-  text.split('\n').forEach(line=>{
-    line=line.trim();
-    if(!line) return;
-    if(line.startsWith('#EXTINF')) {
-      meta={};
-      const t=line.match(/tvg-name="([^"]*)"/);
-      const g=line.match(/group-title="([^"]*)"/);
-      const l=line.match(/tvg-logo="([^"]*)"/);
-      meta.name=(t?t[1].trim():(line.includes(',') ? line.split(',').slice(1).join(',').trim() : '?'));
-      meta.group=g?g[1].trim():'';
-      meta.logo=l?l[1].trim():'';
-    } else if(line.startsWith('http')||line.startsWith('rtmp')) {
-      ch.push({name:meta.name||'?',group:meta.group||'',logo:meta.logo||'',
-               epg_id:'',num:'',stream_id:'',url:line});
-      meta={};
-    }
-  });
-  return ch;
-}
-
-// ══════════════════════════════════════
-//  MAIN LOAD
-// ══════════════════════════════════════
-async function doLoad() {
-  // reset
-  G.channels=[]; G.basket=new Set(); G.pageA=0; G.pageB=0; G.qA=''; G.qB='';
-  document.getElementById('qa').value='';
-  document.getElementById('qb').value='';
-  document.getElementById('cors-notice').className='cors-notice';
-  rebuildFilters(); renderA(); renderB();
-
-  const btn=document.getElementById('btn-load');
-  btn.disabled=true;
-  setProgress(5,'🔄 Menghubungkan...');
-
-  try {
-    let ch=[];
-    const m=G.mode;
-
-    if(m==='xtream') {
-      const base=document.getElementById('xt-srv').value.trim().replace(/\/$/,'');
-      const u=document.getElementById('xt-usr').value.trim();
-      const p=document.getElementById('xt-pwd').value.trim();
-      const live=document.getElementById('xt-live').checked;
-      const vod=document.getElementById('xt-vod').checked;
-      if(!okUrl(base)||!u) throw new Error('Server atau username kosong');
-      if(!live&&!vod) throw new Error('Pilih minimal satu: Live TV atau VOD');
-
-      // try auth info first (graceful fail)
-      setProgress(15,'🔐 Auth Xtream...');
-      try {
-        const r=await fetch(`${base}/player_api.php?username=${u}&password=${p}`);
-        const info=await r.json();
-        const ui=info.user_info||{};
-        if(ui.auth===0) throw new Error('Login gagal — username/password salah');
-        setProgress(25,`✓ ${ui.status||'OK'} · Exp: ${(ui.exp_date||'?').toString().substring(0,10)}`);
-      } catch(e) {
-        if(e.message.includes('Login gagal')) throw e;
-        setProgress(25,'⚠️ Info akun gagal, lanjut...');
-      }
-      ch=await fetchXtream(base,u,p,live,vod);
-
-    } else if(m==='mac') {
-      const portal=document.getElementById('mac-prt').value.trim().replace(/\/$/,'') + '/';
-      const mac=document.getElementById('mac-adr').value.trim().toUpperCase();
-      if(!okUrl(portal)) throw new Error('Portal URL tidak valid');
-      if(!okMac(mac)) throw new Error('Format MAC tidak valid (XX:XX:XX:XX:XX:XX)');
-      setProgress(20,'🔄 MAC Auth...');
-
-      // Handshake
-      const hs=await fetch(`${portal}portal.php?type=stb&action=handshake&JsHttpRequest=1-xml`,{
-        headers:{'User-Agent':'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3',
-                 'X-Requested-With':'XMLHttpRequest',
-                 'Cookie':`mac=${mac}; stb_lang=en; timezone=Europe/Amsterdam`}
-      });
-      const hsj=await hs.json();
-      const tok=hsj?.js?.token;
-      const heads={'User-Agent':'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3',
-                   'X-Requested-With':'XMLHttpRequest',
-                   'Cookie':`mac=${mac}; stb_lang=en; timezone=Europe/Amsterdam`};
-      if(tok) heads['Authorization']=`Bearer ${tok}`;
-
-      setProgress(40,'📺 Mengambil channel...');
-      const r=await fetch(`${portal}portal.php?type=itv&action=get_all_channels&JsHttpRequest=1-xml`,{headers:heads});
-      const d=await r.json();
-      const raw=d?.js?.data||[];
-      raw.forEach(obj=>{
-        const grp=obj.genre_name||obj.category_name||'';
-        let url=(obj.cmd||'').trim();
-        // extract url from cmd
-        const parts=url.split(' ').reverse();
-        url=parts.find(p=>p.startsWith('http')||p.startsWith('rtmp'))||url;
-        ch.push({name:obj.name||'?',group:grp,logo:obj.logo||'',
-                 epg_id:obj.xmltv_id||'',num:String(obj.number||''),
-                 stream_id:'',url});
-      });
-      setProgress(80,`${ch.length.toLocaleString()} channel`);
-
-    } else {
-      const url=document.getElementById('m3u-url').value.trim();
-      if(!okUrl(url)) throw new Error('URL tidak valid');
-      setProgress(20,'🔄 Mengunduh M3U...');
-      const r=await fetch(url);
-      if(!r.ok) throw new Error(`HTTP ${r.status}`);
-      setProgress(55,'🔄 Parsing M3U...');
-      const text=await r.text();
-      ch=parseM3U(text);
-      setProgress(85,`${ch.length.toLocaleString()} channel diparsing`);
-    }
-
-    if(!ch.length) throw new Error('Tidak ada channel ditemukan');
-
-    // keep only needed fields
-    const keep=['name','group','logo','epg_id','num','stream_id','url'];
-    G.channels=ch.map(e=>{const o={};keep.forEach(k=>o[k]=e[k]||'');return o;});
-    G.basket=new Set();
-    rebuildFilters(); renderA(); renderB();
-
-    const now=new Date().toLocaleTimeString();
-    setProgress(100,`✅ ${G.channels.length.toLocaleString()} channel dimuat · ${now}`,'ok');
-    setTimeout(()=>{document.getElementById('prog-wrap').className='progress-wrap';},2000);
-
-  } catch(err) {
-    const msg=err.message||String(err);
-    // detect CORS
-    if(msg.toLowerCase().includes('failed to fetch')||msg.toLowerCase().includes('networkerror')||msg.toLowerCase().includes('cors')) {
-      setProgress(0,'❌ CORS Error — server tidak dapat diakses langsung dari browser','err');
-      document.getElementById('cors-notice').className='cors-notice show';
-    } else {
-      setProgress(0,'❌ '+msg,'err');
-    }
-    document.getElementById('prog-wrap').className='progress-wrap';
-    rebuildFilters(); renderA(); renderB();
-  } finally {
-    btn.disabled=false;
-  }
-}
-
-function showProxyTip() {
-  alert('Untuk mengatasi CORS:\n\n1. Deploy Vercel Serverless Function sebagai proxy\n2. Atau gunakan backend Node.js lokal\n3. Atau gunakan ekstensi browser "CORS Unblock"\n\nLihat file README.md untuk panduan lengkap.');
-  return false;
+function expTXT() {
+  const e=getEntries();
+  if(!e.length) return setNote('⚠️ Keranjang kosong!','err');
+  let fn=(document.getElementById('exp-f').value.trim().replace('.m3u','')||'channels')+'.txt';
+  dl(fn, e.map((x,i)=>`${i+1}. ${x.name} | ${x.url}`).join('\n'), 'text/plain');
+  setNote(`✅ ${fn} — ${e.length.toLocaleString()} baris`,'ok');
 }
 
 // init
-renderBoth();
+both();
 </script>
 </body>
 </html>
