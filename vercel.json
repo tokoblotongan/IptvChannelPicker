@@ -2,22 +2,22 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/iptv.py",
+      "src": "api/*.py",
       "use": "@vercel/python"
     },
     {
-      "src": "index.html",
+      "src": "public/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "api/iptv.py"
+      "dest": "/api/$1.py"
     },
     {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/public/$1"
     }
   ]
 }
