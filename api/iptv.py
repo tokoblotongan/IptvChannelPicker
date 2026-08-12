@@ -7,7 +7,7 @@ Endpoints (POST /api/iptv):
   action=xtream_cats    → fetch live/vod categories
   action=xtream_live    → fetch all live channels
   action=xtream_vod     → fetch all VOD
-  action=mac_auth       → MAC portal handshake + token
+  action=mac_auth       → MAC portal handshake + token + profile
   action=mac_channels   → fetch all MAC portal channels
   action=m3u_fetch      → download + parse M3U/M3U8 URL
 """
@@ -58,7 +58,6 @@ def xtream_auth(base, u, p):
     return data
 
 def xtream_categories(base, u, p, ctype):
-    # ctype: live / vod / series
     action_map = {"live": "get_live_categories", "vod": "get_vod_categories"}
     action = action_map.get(ctype, "get_live_categories")
     url = f"{base}/player_api.php?username={u}&password={p}&action={action}"
@@ -120,6 +119,39 @@ def mac_handshake(portal, mac):
     token = js.get("token") if isinstance(js, dict) else None
     return token
 
+def mac_profile(portal, mac, token):
+    """Ambil profile MAC untuk ekstrak expired date, nama, dll."""
+    base_headers = {
+        "User-Agent": MAG_UA,
+        "X-Requested-With": "XMLHttpRequest",
+        "Referer": f"{portal}portal.php",
+        "Cookie": f"mac={mac}; stb_lang=en; timezone=Europe/Amsterdam",
+    }
+    if token:
+        base_headers["Authorization"] = f"Bearer {token}"
+
+    # 1. Try get_profile (Stalker/Ministra standard)
+    try:
+        url = f"{portal}portal.php?type=stb&action=get_profile&JsHttpRequest=1-xml"
+        data = fetch_json(url, base_headers, timeout=20)
+        js = data.get("js", {})
+        if isinstance(js, dict) and js:
+            return js
+    except Exception:
+        pass
+
+    # 2. Fallback: account_info get_main_info
+    try:
+        url = f"{portal}portal.php?type=account_info&action=get_main_info&JsHttpRequest=1-xml"
+        data = fetch_json(url, base_headers, timeout=20)
+        js = data.get("js", {})
+        if isinstance(js, dict) and js:
+            return js
+    except Exception:
+        pass
+
+    return {}
+
 def mac_channels(portal, mac, token):
     base_headers = {
         "User-Agent": MAG_UA,
@@ -175,7 +207,6 @@ def _mac_normalize(raw):
         grp = (obj.get("genre_name") or obj.get("category_name") or
                str(obj.get("tv_genre_id", "")) or "")
         cmd = str(obj.get("cmd", "")).strip()
-        # Extract URL from cmd string
         parts = cmd.split()
         url = next((p for p in reversed(parts)
                     if p.startswith(("http://", "https://", "rtmp"))), cmd)
@@ -239,7 +270,7 @@ def cors_headers():
 
 class handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
-        pass  # silence default logs
+        pass
 
     def _send(self, status, body):
         self.send_response(status)
@@ -264,7 +295,6 @@ class handler(BaseHTTPRequestHandler):
         action = body.get("action", "")
 
         try:
-            # ── Xtream Auth ──
             if action == "xtream_auth":
                 base = body.get("base", "").rstrip("/")
                 u = body.get("user", "")
@@ -274,7 +304,6 @@ class handler(BaseHTTPRequestHandler):
                 data = xtream_auth(base, u, p)
                 return self._send(200, {"ok": True, "data": data})
 
-            # ── Xtream Live ──
             elif action == "xtream_live":
                 base = body.get("base", "").rstrip("/")
                 u = body.get("user", "")
@@ -285,7 +314,6 @@ class handler(BaseHTTPRequestHandler):
                 return self._send(200, {"ok": True, "channels": channels,
                                         "count": len(channels)})
 
-            # ── Xtream VOD ──
             elif action == "xtream_vod":
                 base = body.get("base", "").rstrip("/")
                 u = body.get("user", "")
@@ -296,7 +324,6 @@ class handler(BaseHTTPRequestHandler):
                 return self._send(200, {"ok": True, "channels": channels,
                                         "count": len(channels)})
 
-            # ── MAC Auth ──
             elif action == "mac_auth":
                 portal = body.get("portal", "").rstrip("/") + "/"
                 mac = body.get("mac", "").upper().strip()
@@ -305,10 +332,11 @@ class handler(BaseHTTPRequestHandler):
                 if not ok_mac(mac):
                     return self._send(400, {"error": "MAC address tidak valid"})
                 token = mac_handshake(portal, mac)
+                profile = mac_profile(portal, mac, token) if token else {}
                 return self._send(200, {"ok": True, "token": token,
-                                        "portal": portal, "mac": mac})
+                                        "portal": portal, "mac": mac,
+                                        "profile": profile})
 
-            # ── MAC Channels ──
             elif action == "mac_channels":
                 portal = body.get("portal", "").rstrip("/") + "/"
                 mac = body.get("mac", "").upper().strip()
@@ -319,7 +347,6 @@ class handler(BaseHTTPRequestHandler):
                 return self._send(200, {"ok": True, "channels": channels,
                                         "count": len(channels)})
 
-            # ── M3U Fetch ──
             elif action == "m3u_fetch":
                 url = body.get("url", "").strip()
                 if not ok_url(url):
