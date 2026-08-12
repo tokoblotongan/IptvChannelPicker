@@ -106,31 +106,35 @@ def xtream_vod(base, u, p):
     return channels
 
 # ─── MAC Portal ─────────────────────────────────────────────
-def mac_handshake(portal, mac):
-    url = f"{portal}portal.php?type=stb&action=handshake&JsHttpRequest=1-xml"
+def _mac_base_headers(portal, mac, token=None):
+    """Headers yang sama persis dengan MAC Multi-Tester yang berhasil."""
     headers = {
         "User-Agent": MAG_UA,
         "X-Requested-With": "XMLHttpRequest",
-        "Referer": f"{portal}portal.php",
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": portal.rstrip("/") + "/",
         "Cookie": f"mac={mac}; stb_lang=en; timezone=Europe%2FAmsterdam",
     }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+def mac_handshake(portal, mac):
+    url = f"{portal}portal.php?type=stb&action=handshake&JsHttpRequest=1-xml"
+    headers = _mac_base_headers(portal, mac)
     data = fetch_json(url, headers)
     js = data.get("js", {})
     token = js.get("token") if isinstance(js, dict) else None
     return token
 
 def mac_profile(portal, mac, token):
-    """Ambil profile MAC dengan multiple endpoint fallback."""
-    base_headers = {
-        "User-Agent": MAG_UA,
-        "X-Requested-With": "XMLHttpRequest",
-        "Referer": f"{portal}portal.php",
-        "Cookie": f"mac={mac}; stb_lang=en; timezone=Europe%2FAmsterdam",
-    }
-    if token:
-        base_headers["Authorization"] = f"Bearer {token}"
+    """
+    Ambil profile MAC dengan multiple endpoint & parsing yang sangat robust.
+    Menangani: js sebagai dict, js sebagai string JSON, flat dict, nested dict.
+    """
+    headers = _mac_base_headers(portal, mac, token)
 
-    # Coba beberapa endpoint yang umum digunakan server Stalker/Ministra
     endpoints = [
         ("stb", "get_profile"),
         ("account_info", "get_main_info"),
@@ -141,25 +145,61 @@ def mac_profile(portal, mac, token):
     for etype, action in endpoints:
         try:
             url = f"{portal}portal.php?type={etype}&action={action}&JsHttpRequest=1-xml"
-            data = fetch_json(url, base_headers, timeout=20)
-            js = data.get("js", {})
+            raw = fetch(url, headers, timeout=20)
 
-            # Kadang js berupa dict langsung
-            if isinstance(js, dict) and js:
-                return js
+            # Parse JSON
+            try:
+                data = json.loads(raw)
+            except Exception:
+                continue
 
-            # Kadang js berupa string JSON yang perlu di-parse lagi
+            # Kumpulkan semua candidate objects yang mungkin berisi profile
+            candidates = []
+
+            # 1. data langsung (tanpa wrapper js)
+            if isinstance(data, dict):
+                candidates.append(data)
+
+            # 2. data.js sebagai dict
+            js = data.get("js")
+            if isinstance(js, dict):
+                candidates.append(js)
+
+            # 3. data.js sebagai string JSON (sering terjadi di Stalker)
             if isinstance(js, str):
                 try:
-                    parsed = json.loads(js)
-                    if isinstance(parsed, dict) and parsed:
-                        return parsed
+                    parsed_js = json.loads(js)
+                    if isinstance(parsed_js, dict):
+                        candidates.append(parsed_js)
                 except Exception:
                     pass
 
-            # Kadang data langsung berisi profile tanpa wrapper js
-            if isinstance(data, dict) and data and "js" not in data and any(k in data for k in ["fname","name","login","end_date","expire_date","status"]):
-                return data
+            # 4. Cek nested keys dalam data maupun js
+            for base in [data, js if isinstance(js, dict) else {}]:
+                if not isinstance(base, dict):
+                    continue
+                for k in ["data", "profile", "account", "user", "subscriber", "info"]:
+                    nested = base.get(k)
+                    if isinstance(nested, dict):
+                        candidates.append(nested)
+
+            # Cari candidate yang paling mirip profile (punya nama atau expire field)
+            profile_keys = [
+                "fname", "name", "login", "username", "first_name", "full_name",
+                "end_date", "expire_date", "expires", "expiration", "expiry", "expire",
+                "valid_until", "valid_till", "valid_to", "paid_to", "trial_end",
+                "account_expiry", "sub_expiry", "subscription_end",
+                "status", "account_status", "state", "is_active", "blocked"
+            ]
+
+            for cand in candidates:
+                if not isinstance(cand, dict):
+                    continue
+                # Jika candidate punya minimal 1 profile key yang non-empty, anggap ini profile
+                for k in profile_keys:
+                    v = cand.get(k)
+                    if v is not None and v != "" and v != 0:
+                        return cand
 
         except Exception:
             continue
@@ -167,24 +207,20 @@ def mac_profile(portal, mac, token):
     return {}
 
 def mac_channels(portal, mac, token):
-    base_headers = {
-        "User-Agent": MAG_UA,
-        "X-Requested-With": "XMLHttpRequest",
-        "Referer": f"{portal}portal.php",
-        "Cookie": f"mac={mac}; stb_lang=en; timezone=Europe%2FAmsterdam",
-    }
-    if token:
-        base_headers["Authorization"] = f"Bearer {token}"
+    headers = _mac_base_headers(portal, mac, token)
 
     # Try get_all_channels first
     try:
         url = f"{portal}portal.php?type=itv&action=get_all_channels&JsHttpRequest=1-xml"
-        data = fetch_json(url, base_headers, timeout=30)
+        data = fetch_json(url, headers, timeout=30)
         js = data.get("js", {})
         if isinstance(js, dict):
             ch = js.get("data", [])
             if ch:
                 return _mac_normalize(ch)
+        # Kadang data langsung tanpa wrapper js
+        if isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
+            return _mac_normalize(data["data"])
     except Exception:
         pass
 
@@ -195,7 +231,7 @@ def mac_channels(portal, mac, token):
         try:
             url = (f"{portal}portal.php?type=itv&action=get_ordered_list"
                    f"&genre=*&p={page}&JsHttpRequest=1-xml")
-            data = fetch_json(url, base_headers, timeout=25)
+            data = fetch_json(url, headers, timeout=25)
             js = data.get("js")
             if not isinstance(js, dict):
                 break
