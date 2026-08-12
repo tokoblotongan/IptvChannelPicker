@@ -642,34 +642,149 @@ function setP(pct, msg, cls='') {
 }
 
 // ════════════════════════════════════
-//  Expired Date Helpers
+//  Expired Date Helpers (ROBUST)
 // ════════════════════════════════════
 function fmtExpDate(val) {
-  if (!val || val === 'null' || val === 'Unlimited' || val === '0' || val === '') return 'Unlimited';
-  const ts = parseInt(val);
-  if (!isNaN(ts) && ts > 1000000000) {
-    const d = new Date(ts * 1000);
-    const s = d.toISOString().split('T')[0];
-    const now = Date.now();
-    const days = Math.floor((d.getTime() - now) / (1000*60*60*24));
-    if (d.getTime() < now) return s + ' (EXPIRED)';
-    if (days <= 7) return s + ' (' + days + ' hari)';
-    return s;
-  }
-  // Jika bukan timestamp, coba parse sebagai string tanggal
+  if (!val || val === 'null' || val === 'Unlimited' || val === '0' || val === '' || val === 'undefined') return 'Unlimited';
+
   const str = String(val).trim();
-  if (str.length >= 4) {
-    const d = new Date(str);
-    if (!isNaN(d.getTime())) {
+
+  // Unix timestamp 10 digit
+  if (/^\d{10}$/.test(str)) {
+    const d = new Date(parseInt(str) * 1000);
+    if (!isNaN(d.getTime()) && d.getFullYear() > 2000) {
       const s = d.toISOString().split('T')[0];
-      const now = Date.now();
-      const days = Math.floor((d.getTime() - now) / (1000*60*60*24));
-      if (d.getTime() < now) return s + ' (EXPIRED)';
+      const days = Math.floor((d.getTime() - Date.now()) / (1000*60*60*24));
+      if (days < 0) return s + ' (EXPIRED)';
       if (days <= 7) return s + ' (' + days + ' hari)';
       return s;
     }
   }
-  return str.substring(0, 20);
+
+  // Milliseconds 13 digit
+  if (/^\d{13}$/.test(str)) {
+    const d = new Date(parseInt(str));
+    if (!isNaN(d.getTime()) && d.getFullYear() > 2000) {
+      const s = d.toISOString().split('T')[0];
+      const days = Math.floor((d.getTime() - Date.now()) / (1000*60*60*24));
+      if (days < 0) return s + ' (EXPIRED)';
+      if (days <= 7) return s + ' (' + days + ' hari)';
+      return s;
+    }
+  }
+
+  // Angka kecil = days remaining
+  const num = Number(str);
+  if (!isNaN(num) && num > 0 && num < 365 && !str.includes('-')) {
+    return num + ' hari lagi';
+  }
+
+  // Format tanggal string
+  const d = new Date(str);
+  if (!isNaN(d.getTime()) && d.getFullYear() > 2000) {
+    const s = d.toISOString().split('T')[0];
+    const days = Math.floor((d.getTime() - Date.now()) / (1000*60*60*24));
+    if (days < 0) return s + ' (EXPIRED)';
+    if (days <= 7) return s + ' (' + days + ' hari)';
+    return s;
+  }
+
+  return str.substring(0, 30);
+}
+
+// ─── Extract MAC Profile (mirip referensi MAC Multi-Tester) ───
+function extractMACProfile(rawProfile) {
+  if (!rawProfile || typeof rawProfile !== 'object') {
+    return { name: 'Unknown', expire: 'Unlimited', status: '' };
+  }
+
+  // Kadang response punya wrapper .js, kadang langsung object
+  let js = rawProfile.js || rawProfile;
+  if (typeof js === 'string') {
+    try { js = JSON.parse(js); } catch(e) { js = rawProfile; }
+  }
+  if (!js || typeof js !== 'object') {
+    return { name: 'Unknown', expire: 'Unlimited', status: '' };
+  }
+
+  // ── EXTRACT NAME ──
+  const nameFields = ['fname','first_name','name','login','username',
+                      'full_name','display_name','nickname','user',
+                      'account_name','subscriber_name','phone'];
+  let name = '';
+  for (const f of nameFields) {
+    if (js[f] && String(js[f]).trim() && String(js[f]).trim() !== '0') {
+      name = js[f]; break;
+    }
+  }
+  if (!name && js.fname && js.lname) name = (js.fname + ' ' + js.lname).trim();
+  if (!name && js.first_name && js.last_name) name = (js.first_name + ' ' + js.last_name).trim();
+
+  // ── EXTRACT EXPIRE ──
+  const expireFields = [
+    'end_date','expire_date','expires','expiration',
+    'valid_until','valid_till','expiry','expire',
+    'account_expiry','sub_expiry','subscription_end',
+    'trial_end','paid_to','valid_to','date_end','date_expire',
+    'expired_date','expiration_date','phone'
+  ];
+
+  let expireRaw = '';
+  let found = false;
+
+  // Cek root object
+  for (const f of expireFields) {
+    if (js[f] !== undefined && js[f] !== null && js[f] !== '') {
+      const val = String(js[f]).trim();
+      if (val === '0' || val === 'null' || val === 'undefined' || val === '') continue;
+      // Skip kalau nilainya mirip channel count (angka besar tapi bukan timestamp)
+      const numVal = Number(val);
+      if (!isNaN(numVal) && numVal > 10000 && numVal < 1000000000) continue;
+      expireRaw = val;
+      found = true;
+      break;
+    }
+  }
+
+  // Cek nested objects
+  if (!found) {
+    const nestedPaths = [js.user, js.account, js.subscriber, js.profile, js.data];
+    for (const obj of nestedPaths) {
+      if (obj && typeof obj === 'object') {
+        for (const f of expireFields) {
+          if (obj[f] !== undefined && obj[f] !== null && obj[f] !== '') {
+            const val = String(obj[f]).trim();
+            if (val === '0' || val === 'null' || val === 'undefined' || val === '') continue;
+            const numVal = Number(val);
+            if (!isNaN(numVal) && numVal > 10000 && numVal < 1000000000) continue;
+            expireRaw = val;
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+    }
+  }
+
+  // ── EXTRACT STATUS ──
+  const statusFields = ['status','account_status','state','is_active','active','enabled','verified','blocked'];
+  let status = '';
+  for (const f of statusFields) {
+    if (js[f] !== undefined && js[f] !== null) {
+      status = String(js[f]);
+      break;
+    }
+  }
+  if (status === 'true' || status === '1') status = 'Active';
+  if (status === 'false' || status === '0') status = 'Inactive';
+  if (js.blocked === 1 || js.blocked === true || js.blocked === '1') status = 'Blocked';
+
+  return {
+    name: name || 'Unknown',
+    expire: fmtExpDate(expireRaw),
+    status: status
+  };
 }
 
 function showAccountInfo(type, data) {
@@ -694,309 +809,17 @@ function showAccountInfo(type, data) {
     `;
     el.style.display = 'block';
   } else if (type === 'mac') {
-    const profile = data.profile || {};
-    const expRaw = profile.end_date || profile.exp_date || profile.expired_date || profile.expire || profile.expiration || profile.expiration_date;
-    const name = profile.fname || profile.login || profile.name || profile.phone || profile.account || profile.full_name || 'Unknown';
-    const expStr = fmtExpDate(expRaw);
-    const isExpired = expStr.includes('EXPIRED');
-    const isWarn = expStr.includes('hari') && !isExpired;
+    const profile = extractMACProfile(data.profile || {});
+    const isExpired = profile.expire.includes('EXPIRED');
+    const isWarn = profile.expire.includes('hari') && !isExpired;
+    const statusClass = isExpired ? 'danger' : (profile.status === 'Active' ? 'ok' : '');
 
     row.innerHTML = `
-      <div class="acc-item"><span class="acc-label">Account:</span><span class="acc-val">${esc(String(name))}</span></div>
+      <div class="acc-item"><span class="acc-label">Account:</span><span class="acc-val">${esc(profile.name)}</span></div>
       <div class="acc-item"><span class="acc-label">MAC:</span><span class="acc-val">${esc(data.mac || '')}</span></div>
-      <div class="acc-item"><span class="acc-label">Expired:</span><span class="acc-val ${isExpired?'danger':(isWarn?'warn':'')}">${esc(expStr)}</span></div>
+      <div class="acc-item"><span class="acc-label">Status:</span><span class="acc-val ${statusClass}">${esc(profile.status || '—')}</span></div>
+      <div class="acc-item"><span class="acc-label">Expired:</span><span class="acc-val ${isExpired?'danger':(isWarn?'warn':'')}">${esc(profile.expire)}</span></div>
     `;
     el.style.display = 'block';
   } else {
-    el.style.display = 'none';
-  }
-}
-
-function hideAccountInfo() {
-  document.getElementById('acc-info').style.display = 'none';
-}
-
-// ════════════════════════════════════
-//  SERVER CALL
-// ════════════════════════════════════
-async function api(body) {
-  const r = await fetch(API, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(body),
-  });
-  const d = await r.json();
-  if(!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
-  return d;
-}
-
-// ════════════════════════════════════
-//  LOAD
-// ════════════════════════════════════
-async function doLoad() {
-  G.channels=[]; G.basket=new Set(); G.pageA=0; G.pageB=0;
-  G.qA=''; G.qB='';
-  document.getElementById('qa').value='';
-  document.getElementById('qb').value='';
-  hideAccountInfo();
-  rebuildFilters(); renderA(); renderB();
-
-  const allBtns = document.querySelectorAll('.btn-load');
-  allBtns.forEach(b=>b.disabled=true);
-  setP(5,'🔄 Menghubungkan ke server...');
-
-  try {
-    let ch=[];
-    const m=G.mode;
-    let xtAuthData = null;
-
-    if(m==='xt') {
-      const base = document.getElementById('xt-srv').value.trim().replace(/\/$/,'');
-      const u    = document.getElementById('xt-usr').value.trim();
-      const p    = document.getElementById('xt-pwd').value.trim();
-      const live = document.getElementById('xt-live').checked;
-      const vod  = document.getElementById('xt-vod').checked;
-      if(!base||!u) throw new Error('Server atau username kosong');
-      if(!live&&!vod) throw new Error('Pilih Live TV dan/atau VOD');
-
-      setP(15,'🔐 Auth Xtream...');
-      try {
-        const auth = await api({action:'xtream_auth', base, user:u, pass:p});
-        xtAuthData = auth.data;
-        const ui   = auth.data?.user_info || {};
-        if(ui.auth===0) throw new Error('Login gagal — username/password salah');
-        setP(25, `✓ ${ui.status||'OK'} · exp: ${fmtExpDate(ui.exp_date)}`);
-      } catch(e) {
-        if(e.message.includes('Login gagal')) throw e;
-        setP(25,'⚠️ Info akun dilewati, lanjut...');
-      }
-
-      if(live) {
-        setP(30,'📺 Mengambil Live TV...');
-        const r = await api({action:'xtream_live', base, user:u, pass:p});
-        ch.push(...r.channels);
-        setP(60,`Live: ${r.count.toLocaleString()} channel`);
-      }
-      if(vod) {
-        setP(65,'🎬 Mengambil VOD...');
-        const r = await api({action:'xtream_vod', base, user:u, pass:p});
-        ch.push(...r.channels);
-        setP(85,`Total: ${ch.length.toLocaleString()} channel`);
-      }
-
-    } else if(m==='mac') {
-      const portal = document.getElementById('mac-prt').value.trim();
-      const mac    = document.getElementById('mac-adr').value.trim().toUpperCase();
-      if(!portal||!mac) throw new Error('Portal URL dan MAC wajib diisi');
-
-      setP(15,'🔄 MAC Auth...');
-      const authR = await api({action:'mac_auth', portal, mac});
-      showAccountInfo('mac', authR);
-      setP(35,'✓ Auth OK — mengambil channel...');
-      const chanR = await api({action:'mac_channels',
-                               portal: authR.portal,
-                               mac: authR.mac,
-                               token: authR.token||''});
-      ch = chanR.channels;
-      setP(85,`${ch.length.toLocaleString()} channel`);
-
-    } else {
-      const url = document.getElementById('m3u-url').value.trim();
-      if(!url) throw new Error('URL M3U tidak boleh kosong');
-      setP(20,'🔄 Mengunduh & parsing M3U...');
-      const r = await api({action:'m3u_fetch', url});
-      ch = r.channels;
-      setP(85,`${ch.length.toLocaleString()} channel diparsed`);
-    }
-
-    if(!ch.length) throw new Error('Tidak ada channel ditemukan');
-
-    const keep=['name','group','logo','epg_id','num','stream_id','url'];
-    G.channels = ch.map(e => { const o={}; keep.forEach(k=>o[k]=e[k]||''); return o; });
-    G.basket   = new Set();
-    rebuildFilters(); renderA(); renderB();
-
-    // Tampilkan info akun Xtream setelah load selesai
-    if (m==='xt' && xtAuthData) showAccountInfo('xt', xtAuthData);
-
-    setP(100, `✅ ${G.channels.length.toLocaleString()} channel dimuat · ${new Date().toLocaleTimeString()}`, 'ok');
-    setTimeout(()=>{ document.getElementById('pwrap').className='prog-wrap'; }, 2500);
-
-  } catch(e) {
-    setP(0, '❌ ' + e.message, 'err');
-    document.getElementById('pwrap').className='prog-wrap';
-    rebuildFilters(); renderA(); renderB();
-  } finally {
-    allBtns.forEach(b=>b.disabled=false);
-  }
-}
-
-// ════════════════════════════════════
-//  FILTERS / SORT
-// ════════════════════════════════════
-function sk(n) {
-  n=(n||'').trim();
-  if(!n) return[2,''];
-  const c=n[0];
-  if(/\d/.test(c)) return[0,n.toLowerCase()];
-  if(/[a-zA-Z]/.test(c)) return[1,n.toLowerCase()];
-  return[2,n.toLowerCase()];
-}
-function nk(n) {
-  n=(n||'').trim();
-  const m=n.match(/^(\d+)/);
-  return m?[0,parseInt(m[1]),n.toLowerCase()]:[1,0,n.toLowerCase()];
-}
-function cmp(a,b) { for(let i=0;i<a.length;i++){if(a[i]<b[i])return -1;if(a[i]>b[i])return 1;} return 0; }
-
-function rebuildFilters() {
-  const qA=G.qA.toLowerCase();
-  let idx=[...G.channels.keys()];
-  if(qA) idx=idx.filter(i=>G.channels[i].name.toLowerCase().includes(qA));
-  if(G.sort==='az')  idx.sort((a,b)=>cmp(sk(G.channels[a].name), sk(G.channels[b].name)));
-  else if(G.sort==='za') idx.sort((a,b)=>cmp(sk(G.channels[b].name), sk(G.channels[a].name)));
-  else idx.sort((a,b)=>cmp(nk(G.channels[a].name), nk(G.channels[b].name)));
-  G.fA = idx;
-
-  const qB=G.qB.toLowerCase();
-  let bi=[...G.basket].filter(i=>i<G.channels.length&&(!qB||G.channels[i].name.toLowerCase().includes(qB)));
-  bi.sort((a,b)=>cmp(sk(G.channels[a].name), sk(G.channels[b].name)));
-  G.fB = bi;
-
-  document.getElementById('h-total').textContent  = G.channels.length.toLocaleString();
-  document.getElementById('h-basket').textContent = G.basket.size.toLocaleString();
-  document.getElementById('h-filter').textContent = G.fA.length.toLocaleString();
-}
-
-function pages(arr) { return Math.max(1, Math.ceil(arr.length/PG)); }
-
-// ════════════════════════════════════
-//  RENDER
-// ════════════════════════════════════
-function esc(s) {
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function renderA() {
-  const fa=G.fA, npg=pages(fa);
-  G.pageA = Math.max(0, Math.min(G.pageA, npg-1));
-  const pg=G.pageA, start=pg*PG, slc=fa.slice(start,start+PG);
-
-  document.getElementById('pA-i').textContent = `${pg+1} / ${npg}`;
-  document.getElementById('pA-p').disabled = pg===0;
-  document.getElementById('pA-n').disabled = pg>=npg-1;
-
-  const el=document.getElementById('la');
-  if(!slc.length) { el.innerHTML='<div class="empty"><div class="empty-ico">🔍</div>Tidak ada channel</div>'; return; }
-
-  el.innerHTML = slc.map((i,idx)=>{
-    const e=G.channels[i], inB=G.basket.has(i);
-    return `<div class="crow${inB?' inb':''}">
-      <span class="cnum">${start+idx+1}</span>
-      <span class="cname" title="${esc(e.name)}">${esc(e.name.substring(0,90))}</span>
-      ${e.group?`<span class="cgrp" title="${esc(e.group)}">${esc(e.group.substring(0,20))}</span>`:''}
-      <button class="btog${inB?' on':''}" onclick="toggle(${i})">${inB?'✓ Ada':'+ Pilih'}</button>
-    </div>`;
-  }).join('');
-}
-
-function renderB() {
-  const fb=G.fB, npg=pages(fb);
-  G.pageB = Math.max(0, Math.min(G.pageB, npg-1));
-  const pg=G.pageB, start=pg*PG, slc=fb.slice(start,start+PG);
-
-  document.getElementById('pB-i').textContent = `${pg+1} / ${npg}`;
-  document.getElementById('pB-p').disabled = pg===0;
-  document.getElementById('pB-n').disabled = pg>=npg-1;
-
-  const el=document.getElementById('lb');
-  if(!slc.length) { el.innerHTML='<div class="empty"><div class="empty-ico">🛒</div>Keranjang kosong.<br>Pilih dari Panel A.</div>'; return; }
-
-  el.innerHTML = slc.map((i,idx)=>{
-    const e=G.channels[i];
-    return `<div class="crow inb">
-      <span class="cnum">${start+idx+1}</span>
-      <span class="cname">${esc(e.name.substring(0,90))}</span>
-      ${e.group?`<span class="cgrp">${esc(e.group.substring(0,20))}</span>`:''}
-      <button class="btog on" onclick="remove(${i})">✕ Hapus</button>
-    </div>`;
-  }).join('');
-}
-
-function both() { rebuildFilters(); renderA(); renderB(); }
-
-// ════════════════════════════════════
-//  ACTIONS
-// ════════════════════════════════════
-function toggle(i) { G.basket.has(i)?G.basket.delete(i):G.basket.add(i); both(); }
-function remove(i) { G.basket.delete(i); both(); }
-function clearB()  { G.basket.clear(); G.pageB=0; both(); }
-function goPage(p,d) {
-  if(p==='a'){G.pageA=Math.max(0,G.pageA+d);renderA();}
-  else{G.pageB=Math.max(0,G.pageB+d);renderB();}
-}
-function onQA() { G.qA=document.getElementById('qa').value; G.pageA=0; rebuildFilters(); renderA(); renderB(); }
-function onQB() { G.qB=document.getElementById('qb').value; G.pageB=0; rebuildFilters(); renderB(); }
-function setSort(s,el) {
-  G.sort=s; G.pageA=0;
-  document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('on'));
-  el.classList.add('on');
-  rebuildFilters(); renderA();
-}
-function addPage() {
-  G.fA.slice(G.pageA*PG,(G.pageA+1)*PG).forEach(i=>G.basket.add(i));
-  both();
-}
-function addAll() { G.fA.forEach(i=>G.basket.add(i)); both(); }
-
-// ════════════════════════════════════
-//  EXPORT
-// ════════════════════════════════════
-function getEntries() {
-  return [...G.basket].filter(i=>i<G.channels.length).map(i=>G.channels[i]);
-}
-function buildM3U(entries,epg) {
-  let ln=['#EXTM3U'+(epg?` x-tvg-url="${epg}"`:'')];
-  entries.forEach(e=>{
-    let x='#EXTINF:-1';
-    if(e.epg_id) x+=` tvg-id="${e.epg_id}"`;
-    x+=` tvg-name="${e.name}"`;
-    if(e.logo)   x+=` tvg-logo="${e.logo}"`;
-    if(e.group)  x+=` group-title="${e.group}"`;
-    if(e.num)    x+=` tvg-chno="${e.num}"`;
-    x+=`,${e.name}`;
-    ln.push(x, e.url||'');
-  });
-  return ln.join('\n');
-}
-function dl(fname,content,type) {
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([content],{type}));
-  a.download=fname; a.click();
-  URL.revokeObjectURL(a.href);
-}
-function setNote(msg,cls) {
-  const n=document.getElementById('enote');
-  n.textContent=msg; n.className='enote'+(cls?' '+cls:'');
-}
-function expM3U() {
-  const e=getEntries();
-  if(!e.length) return setNote('⚠️ Keranjang kosong!','err');
-  let fn=document.getElementById('exp-f').value.trim()||'playlist.m3u';
-  if(!fn.endsWith('.m3u')) fn+='.m3u';
-  dl(fn, buildM3U(e, document.getElementById('exp-epg').value.trim()), 'audio/x-mpegurl');
-  setNote(`✅ ${fn} — ${e.length.toLocaleString()} channel`,'ok');
-}
-function expTXT() {
-  const e=getEntries();
-  if(!e.length) return setNote('⚠️ Keranjang kosong!','err');
-  let fn=(document.getElementById('exp-f').value.trim().replace('.m3u','')||'channels')+'.txt';
-  dl(fn, e.map((x,i)=>`${i+1}. ${x.name} | ${x.url}`).join('\n'), 'text/plain');
-  setNote(`✅ ${fn} — ${e.length.toLocaleString()} baris`,'ok');
-}
-
-// init
-both();
-</script>
-</body>
-</html>
+   
