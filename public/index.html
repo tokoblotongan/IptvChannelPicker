@@ -199,6 +199,42 @@ header {
 }
 .dot-green { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; }
 
+/* ─── Account Info Box ─── */
+.acc-info {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--brd2);
+  border-radius: var(--r);
+  display: none;
+}
+.acc-row {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.acc-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+}
+.acc-label {
+  color: var(--txt3);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  font-size: 10px;
+}
+.acc-val {
+  color: var(--blue2);
+  font-weight: 700;
+  font-size: 11px;
+}
+.acc-val.ok     { color: var(--green); }
+.acc-val.warn   { color: var(--amber); }
+.acc-val.danger { color: var(--red); }
+
 /* ━━━━ MAIN 2-COL ━━━━ */
 .main {
   display: grid;
@@ -415,6 +451,7 @@ header {
   .main { grid-template-columns: 1fr; }
   .panel { border-right: none; border-bottom: 1px solid var(--brd); }
   .hstat { display: none; }
+  .acc-row { flex-direction: column; align-items: flex-start; gap: 6px; }
 }
 </style>
 </head>
@@ -490,6 +527,12 @@ header {
     <div class="smsg" id="smsg">⬆ Pilih sumber → isi kredensial → LOAD</div>
     <div class="prog-wrap" id="pwrap"><div class="prog-bar" id="pbar"></div></div>
   </div>
+
+  <!-- Account Info Box -->
+  <div class="acc-info" id="acc-info">
+    <div class="acc-row" id="acc-row"></div>
+  </div>
+
   <div class="server-note">
     <span class="dot-green"></span>
     Semua request diproses di <b>server Vercel</b> — tidak ada CORS issue, IP browser tidak terekspos ke server IPTV
@@ -599,6 +642,81 @@ function setP(pct, msg, cls='') {
 }
 
 // ════════════════════════════════════
+//  Expired Date Helpers
+// ════════════════════════════════════
+function fmtExpDate(val) {
+  if (!val || val === 'null' || val === 'Unlimited' || val === '0' || val === '') return 'Unlimited';
+  const ts = parseInt(val);
+  if (!isNaN(ts) && ts > 1000000000) {
+    const d = new Date(ts * 1000);
+    const s = d.toISOString().split('T')[0];
+    const now = Date.now();
+    const days = Math.floor((d.getTime() - now) / (1000*60*60*24));
+    if (d.getTime() < now) return s + ' (EXPIRED)';
+    if (days <= 7) return s + ' (' + days + ' hari)';
+    return s;
+  }
+  // Jika bukan timestamp, coba parse sebagai string tanggal
+  const str = String(val).trim();
+  if (str.length >= 4) {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      const s = d.toISOString().split('T')[0];
+      const now = Date.now();
+      const days = Math.floor((d.getTime() - now) / (1000*60*60*24));
+      if (d.getTime() < now) return s + ' (EXPIRED)';
+      if (days <= 7) return s + ' (' + days + ' hari)';
+      return s;
+    }
+  }
+  return str.substring(0, 20);
+}
+
+function showAccountInfo(type, data) {
+  const el = document.getElementById('acc-info');
+  const row = document.getElementById('acc-row');
+  if (!data) { el.style.display = 'none'; return; }
+
+  if (type === 'xt') {
+    const ui = data.user_info || (data.data && data.data.user_info) || {};
+    const expRaw = ui.exp_date || ui.expire || ui.expiration;
+    const status = ui.status || (ui.auth === 1 ? 'Active' : (ui.auth === 0 ? 'Expired' : 'Unknown'));
+    const maxCon = ui.max_connections || '?';
+    const activeCon = ui.active_cons || ui.active_connections || '?';
+    const expStr = fmtExpDate(expRaw);
+    const isExpired = expStr.includes('EXPIRED');
+    const isWarn = expStr.includes('hari') && !isExpired;
+
+    row.innerHTML = `
+      <div class="acc-item"><span class="acc-label">Status:</span><span class="acc-val ${isExpired?'danger':'ok'}">${esc(status)}</span></div>
+      <div class="acc-item"><span class="acc-label">Expired:</span><span class="acc-val ${isExpired?'danger':(isWarn?'warn':'')}">${esc(expStr)}</span></div>
+      <div class="acc-item"><span class="acc-label">Connections:</span><span class="acc-val">${esc(String(activeCon))} / ${esc(String(maxCon))}</span></div>
+    `;
+    el.style.display = 'block';
+  } else if (type === 'mac') {
+    const profile = data.profile || {};
+    const expRaw = profile.end_date || profile.exp_date || profile.expired_date || profile.expire || profile.expiration || profile.expiration_date;
+    const name = profile.fname || profile.login || profile.name || profile.phone || profile.account || profile.full_name || 'Unknown';
+    const expStr = fmtExpDate(expRaw);
+    const isExpired = expStr.includes('EXPIRED');
+    const isWarn = expStr.includes('hari') && !isExpired;
+
+    row.innerHTML = `
+      <div class="acc-item"><span class="acc-label">Account:</span><span class="acc-val">${esc(String(name))}</span></div>
+      <div class="acc-item"><span class="acc-label">MAC:</span><span class="acc-val">${esc(data.mac || '')}</span></div>
+      <div class="acc-item"><span class="acc-label">Expired:</span><span class="acc-val ${isExpired?'danger':(isWarn?'warn':'')}">${esc(expStr)}</span></div>
+    `;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function hideAccountInfo() {
+  document.getElementById('acc-info').style.display = 'none';
+}
+
+// ════════════════════════════════════
 //  SERVER CALL
 // ════════════════════════════════════
 async function api(body) {
@@ -620,6 +738,7 @@ async function doLoad() {
   G.qA=''; G.qB='';
   document.getElementById('qa').value='';
   document.getElementById('qb').value='';
+  hideAccountInfo();
   rebuildFilters(); renderA(); renderB();
 
   const allBtns = document.querySelectorAll('.btn-load');
@@ -629,6 +748,7 @@ async function doLoad() {
   try {
     let ch=[];
     const m=G.mode;
+    let xtAuthData = null;
 
     if(m==='xt') {
       const base = document.getElementById('xt-srv').value.trim().replace(/\/$/,'');
@@ -642,9 +762,10 @@ async function doLoad() {
       setP(15,'🔐 Auth Xtream...');
       try {
         const auth = await api({action:'xtream_auth', base, user:u, pass:p});
+        xtAuthData = auth.data;
         const ui   = auth.data?.user_info || {};
         if(ui.auth===0) throw new Error('Login gagal — username/password salah');
-        setP(25, `✓ ${ui.status||'OK'} · exp: ${String(ui.exp_date||'?').substring(0,10)}`);
+        setP(25, `✓ ${ui.status||'OK'} · exp: ${fmtExpDate(ui.exp_date)}`);
       } catch(e) {
         if(e.message.includes('Login gagal')) throw e;
         setP(25,'⚠️ Info akun dilewati, lanjut...');
@@ -670,6 +791,7 @@ async function doLoad() {
 
       setP(15,'🔄 MAC Auth...');
       const authR = await api({action:'mac_auth', portal, mac});
+      showAccountInfo('mac', authR);
       setP(35,'✓ Auth OK — mengambil channel...');
       const chanR = await api({action:'mac_channels',
                                portal: authR.portal,
@@ -693,6 +815,9 @@ async function doLoad() {
     G.channels = ch.map(e => { const o={}; keep.forEach(k=>o[k]=e[k]||''); return o; });
     G.basket   = new Set();
     rebuildFilters(); renderA(); renderB();
+
+    // Tampilkan info akun Xtream setelah load selesai
+    if (m==='xt' && xtAuthData) showAccountInfo('xt', xtAuthData);
 
     setP(100, `✅ ${G.channels.length.toLocaleString()} channel dimuat · ${new Date().toLocaleTimeString()}`, 'ok');
     setTimeout(()=>{ document.getElementById('pwrap').className='prog-wrap'; }, 2500);
