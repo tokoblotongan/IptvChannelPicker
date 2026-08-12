@@ -112,7 +112,7 @@ def mac_handshake(portal, mac):
         "User-Agent": MAG_UA,
         "X-Requested-With": "XMLHttpRequest",
         "Referer": f"{portal}portal.php",
-        "Cookie": f"mac={mac}; stb_lang=en; timezone=Europe/Amsterdam",
+        "Cookie": f"mac={mac}; stb_lang=en; timezone=Europe%2FAmsterdam",
     }
     data = fetch_json(url, headers)
     js = data.get("js", {})
@@ -120,35 +120,49 @@ def mac_handshake(portal, mac):
     return token
 
 def mac_profile(portal, mac, token):
-    """Ambil profile MAC untuk ekstrak expired date, nama, dll."""
+    """Ambil profile MAC dengan multiple endpoint fallback."""
     base_headers = {
         "User-Agent": MAG_UA,
         "X-Requested-With": "XMLHttpRequest",
         "Referer": f"{portal}portal.php",
-        "Cookie": f"mac={mac}; stb_lang=en; timezone=Europe/Amsterdam",
+        "Cookie": f"mac={mac}; stb_lang=en; timezone=Europe%2FAmsterdam",
     }
     if token:
         base_headers["Authorization"] = f"Bearer {token}"
 
-    # 1. Try get_profile (Stalker/Ministra standard)
-    try:
-        url = f"{portal}portal.php?type=stb&action=get_profile&JsHttpRequest=1-xml"
-        data = fetch_json(url, base_headers, timeout=20)
-        js = data.get("js", {})
-        if isinstance(js, dict) and js:
-            return js
-    except Exception:
-        pass
+    # Coba beberapa endpoint yang umum digunakan server Stalker/Ministra
+    endpoints = [
+        ("stb", "get_profile"),
+        ("account_info", "get_main_info"),
+        ("stb", "get_profile&hd=1"),
+        ("account_info", "get_info"),
+    ]
 
-    # 2. Fallback: account_info get_main_info
-    try:
-        url = f"{portal}portal.php?type=account_info&action=get_main_info&JsHttpRequest=1-xml"
-        data = fetch_json(url, base_headers, timeout=20)
-        js = data.get("js", {})
-        if isinstance(js, dict) and js:
-            return js
-    except Exception:
-        pass
+    for etype, action in endpoints:
+        try:
+            url = f"{portal}portal.php?type={etype}&action={action}&JsHttpRequest=1-xml"
+            data = fetch_json(url, base_headers, timeout=20)
+            js = data.get("js", {})
+
+            # Kadang js berupa dict langsung
+            if isinstance(js, dict) and js:
+                return js
+
+            # Kadang js berupa string JSON yang perlu di-parse lagi
+            if isinstance(js, str):
+                try:
+                    parsed = json.loads(js)
+                    if isinstance(parsed, dict) and parsed:
+                        return parsed
+                except Exception:
+                    pass
+
+            # Kadang data langsung berisi profile tanpa wrapper js
+            if isinstance(data, dict) and data and "js" not in data and any(k in data for k in ["fname","name","login","end_date","expire_date","status"]):
+                return data
+
+        except Exception:
+            continue
 
     return {}
 
@@ -157,7 +171,7 @@ def mac_channels(portal, mac, token):
         "User-Agent": MAG_UA,
         "X-Requested-With": "XMLHttpRequest",
         "Referer": f"{portal}portal.php",
-        "Cookie": f"mac={mac}; stb_lang=en; timezone=Europe/Amsterdam",
+        "Cookie": f"mac={mac}; stb_lang=en; timezone=Europe%2FAmsterdam",
     }
     if token:
         base_headers["Authorization"] = f"Bearer {token}"
