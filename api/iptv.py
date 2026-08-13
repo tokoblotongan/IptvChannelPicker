@@ -8,7 +8,7 @@ Endpoints (POST /api/iptv):
   action=xtream_live    → fetch all live channels
   action=xtream_vod     → fetch all VOD
   action=mac_auth       → MAC portal handshake + token + profile
-  action=mac_channels   → fetch all MAC portal channels
+  action=mac_channels   → fetch all MAC portal channels (opt: include_adult)
   action=m3u_fetch      → download + parse M3U/M3U8 URL
 """
 
@@ -147,25 +147,20 @@ def mac_profile(portal, mac, token):
             url = f"{portal}portal.php?type={etype}&action={action}&JsHttpRequest=1-xml"
             raw = fetch(url, headers, timeout=20)
 
-            # Parse JSON
             try:
                 data = json.loads(raw)
             except Exception:
                 continue
 
-            # Kumpulkan semua candidate objects yang mungkin berisi profile
+            # Kumpulkan semua candidate objects
             candidates = []
 
-            # 1. data langsung (tanpa wrapper js)
             if isinstance(data, dict):
                 candidates.append(data)
 
-            # 2. data.js sebagai dict
             js = data.get("js")
             if isinstance(js, dict):
                 candidates.append(js)
-
-            # 3. data.js sebagai string JSON (sering terjadi di Stalker)
             if isinstance(js, str):
                 try:
                     parsed_js = json.loads(js)
@@ -174,7 +169,6 @@ def mac_profile(portal, mac, token):
                 except Exception:
                     pass
 
-            # 4. Cek nested keys dalam data maupun js
             for base in [data, js if isinstance(js, dict) else {}]:
                 if not isinstance(base, dict):
                     continue
@@ -183,19 +177,18 @@ def mac_profile(portal, mac, token):
                     if isinstance(nested, dict):
                         candidates.append(nested)
 
-            # Cari candidate yang paling mirip profile (punya nama atau expire field)
             profile_keys = [
                 "fname", "name", "login", "username", "first_name", "full_name",
                 "end_date", "expire_date", "expires", "expiration", "expiry", "expire",
                 "valid_until", "valid_till", "valid_to", "paid_to", "trial_end",
                 "account_expiry", "sub_expiry", "subscription_end",
-                "status", "account_status", "state", "is_active", "blocked"
+                "status", "account_status", "state", "is_active", "blocked",
+                "parent_password", "parental_password", "parent_pwd", "pin"
             ]
 
             for cand in candidates:
                 if not isinstance(cand, dict):
                     continue
-                # Jika candidate punya minimal 1 profile key yang non-empty, anggap ini profile
                 for k in profile_keys:
                     v = cand.get(k)
                     if v is not None and v != "" and v != 0:
@@ -206,50 +199,31 @@ def mac_profile(portal, mac, token):
 
     return {}
 
-def mac_channels(portal, mac, token):
-    headers = _mac_base_headers(portal, mac, token)
+def _is_adult_genre(g):
+    """Deteksi genre adult dari title / censored flag."""
+    title = (g.get("title") or g.get("name") or "").lower()
+    censored = str(g.get("censored", "0"))
+    adult_kw = ("adult", "xxx", "18+", "+18", "porn", "erotic", "sex",
+                "для взрослых", "для дорослих", "adults", "for adults")
+    if censored in ("1", "true", "yes"):
+        return True
+    return any(k in title for k in adult_kw)
 
-    # Try get_all_channels first
+def mac_genres(portal, mac, token):
+    headers = _mac_base_headers(portal, mac, token)
+    url = f"{portal}portal.php?type=itv&action=get_genres&JsHttpRequest=1-xml"
     try:
-        url = f"{portal}portal.php?type=itv&action=get_all_channels&JsHttpRequest=1-xml"
-        data = fetch_json(url, headers, timeout=30)
-        js = data.get("js", {})
-        if isinstance(js, dict):
-            ch = js.get("data", [])
-            if ch:
-                return _mac_normalize(ch)
-        # Kadang data langsung tanpa wrapper js
-        if isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
-            return _mac_normalize(data["data"])
+        data = fetch_json(url, headers, timeout=20)
+        js = data.get("js", data)
+        if isinstance(js, list):
+            return js
+        if isinstance(js, dict) and "data" in js:
+            return js["data"]
+        if isinstance(data, list):
+            return data
     except Exception:
         pass
-
-    # Fallback: paginated get_ordered_list
-    all_ch = []
-    page = 1
-    while True:
-        try:
-            url = (f"{portal}portal.php?type=itv&action=get_ordered_list"
-                   f"&genre=*&p={page}&JsHttpRequest=1-xml")
-            data = fetch_json(url, headers, timeout=25)
-            js = data.get("js")
-            if not isinstance(js, dict):
-                break
-            chunk = js.get("data", [])
-            total = int(js.get("total_items", 0))
-            if not chunk:
-                break
-            all_ch.extend(chunk)
-            if total and len(all_ch) >= total:
-                break
-            if len(chunk) < 14:
-                break
-            page += 1
-            time.sleep(0.05)
-        except Exception:
-            break
-
-    return _mac_normalize(all_ch)
+    return []
 
 def _mac_normalize(raw):
     out = []
@@ -270,6 +244,95 @@ def _mac_normalize(raw):
             "url":       url,
         })
     return out
+
+def mac_channels(portal, mac, token, include_adult=False):
+    headers = _mac_base_headers(portal, mac, token)
+    all_ch = []
+    seen_ids = set()
+
+    def add_chunk(chunk):
+        for obj in chunk:
+            if not isinstance(obj, dict):
+                continue
+            cid = str(obj.get("id") or obj.get("cmd") or obj.get("number") or "")
+            if cid and cid in seen_ids:
+                continue
+            if cid:
+                seen_ids.add(cid)
+            all_ch.append(obj)
+
+    # 1. get_all_channels (non-adult biasanya)
+    try:
+        url = f"{portal}portal.php?type=itv&action=get_all_channels&JsHttpRequest=1-xml"
+        data = fetch_json(url, headers, timeout=30)
+        js = data.get("js", {})
+        if isinstance(js, dict):
+            add_chunk(js.get("data", []))
+        elif isinstance(data, dict) and isinstance(data.get("data"), list):
+            add_chunk(data["data"])
+    except Exception:
+        pass
+
+    # 2. Kalau include_adult, ambil genre adult & request per genre
+    if include_adult:
+        try:
+            genres = mac_genres(portal, mac, token)
+            adult_genres = [g for g in genres if _is_adult_genre(g)]
+            for g in adult_genres:
+                gid = g.get("id") or g.get("genre_id") or g.get("category_id") or ""
+                if not gid:
+                    continue
+                page = 1
+                while True:
+                    try:
+                        url = (f"{portal}portal.php?type=itv&action=get_ordered_list"
+                               f"&genre={gid}&p={page}&JsHttpRequest=1-xml")
+                        data = fetch_json(url, headers, timeout=25)
+                        js = data.get("js")
+                        if not isinstance(js, dict):
+                            break
+                        chunk = js.get("data", [])
+                        if not chunk:
+                            break
+                        add_chunk(chunk)
+                        total = int(js.get("total_items", 0))
+                        if total and len(all_ch) >= total:
+                            break
+                        if len(chunk) < 14:
+                            break
+                        page += 1
+                        time.sleep(0.05)
+                    except Exception:
+                        break
+        except Exception:
+            pass
+
+    # 3. Fallback genre=* kalau masih kosong
+    if not all_ch:
+        page = 1
+        while True:
+            try:
+                url = (f"{portal}portal.php?type=itv&action=get_ordered_list"
+                       f"&genre=*&p={page}&JsHttpRequest=1-xml")
+                data = fetch_json(url, headers, timeout=25)
+                js = data.get("js")
+                if not isinstance(js, dict):
+                    break
+                chunk = js.get("data", [])
+                if not chunk:
+                    break
+                add_chunk(chunk)
+                total = int(js.get("total_items", 0))
+                if total and len(all_ch) >= total:
+                    break
+                if len(chunk) < 14:
+                    break
+                page += 1
+                time.sleep(0.05)
+            except Exception:
+                break
+
+    return _mac_normalize(all_ch)
 
 # ─── M3U Parse ──────────────────────────────────────────────
 def m3u_fetch(url):
@@ -391,9 +454,10 @@ class handler(BaseHTTPRequestHandler):
                 portal = body.get("portal", "").rstrip("/") + "/"
                 mac = body.get("mac", "").upper().strip()
                 token = body.get("token", "")
+                include_adult = body.get("include_adult", False)
                 if not ok_url(portal) or not ok_mac(mac):
                     return self._send(400, {"error": "Portal/MAC tidak valid"})
-                channels = mac_channels(portal, mac, token)
+                channels = mac_channels(portal, mac, token, include_adult)
                 return self._send(200, {"ok": True, "channels": channels,
                                         "count": len(channels)})
 
