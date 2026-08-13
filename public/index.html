@@ -134,7 +134,7 @@ header {
 }
 .fg input:focus { border-color: var(--blue); }
 .fg input::placeholder { color: var(--txt3); }
-.chks { display: flex; gap: 12px; align-items: center; height: 34px; }
+.chks { display: flex; gap: 12px; align-items: center; height: 34px; flex-wrap: wrap; }
 .chk {
   display: flex; align-items: center; gap: 5px;
   font-size: 11px; color: var(--txt2); cursor: pointer;
@@ -511,6 +511,12 @@ header {
       <label>MAC Address</label>
       <input id="mac-adr" type="text" placeholder="00:1A:79:XX:XX:XX" style="width:185px">
     </div>
+    <div class="fg">
+      <label>Opsi</label>
+      <div class="chks">
+        <label class="chk"><input type="checkbox" id="mac-adult"> 🔞 Include Adult</label>
+      </div>
+    </div>
     <button class="btn-load" onclick="doLoad()">↓ LOAD</button>
   </div>
 
@@ -648,7 +654,6 @@ function fmtExpDate(val) {
   if (!val || val === 'null' || val === 'Unlimited' || val === '0' || val === '' || val === 'undefined') return 'Unlimited';
   const str = String(val).trim();
 
-  // Unix timestamp 10 digit
   if (/^\d{10}$/.test(str)) {
     const d = new Date(parseInt(str) * 1000);
     if (!isNaN(d.getTime()) && d.getFullYear() > 2000) {
@@ -660,7 +665,6 @@ function fmtExpDate(val) {
     }
   }
 
-  // Milliseconds 13 digit
   if (/^\d{13}$/.test(str)) {
     const d = new Date(parseInt(str));
     if (!isNaN(d.getTime()) && d.getFullYear() > 2000) {
@@ -672,13 +676,11 @@ function fmtExpDate(val) {
     }
   }
 
-  // Angka kecil = days remaining
   const num = Number(str);
   if (!isNaN(num) && num > 0 && num < 365 && !str.includes('-')) {
     return num + ' hari lagi';
   }
 
-  // Format tanggal string
   const d = new Date(str);
   if (!isNaN(d.getTime()) && d.getFullYear() > 2000) {
     const s = d.toISOString().split('T')[0];
@@ -694,7 +696,7 @@ function fmtExpDate(val) {
 // ─── Extract MAC Profile ───
 function extractMACProfile(rawProfile) {
   if (!rawProfile || typeof rawProfile !== 'object') {
-    return { name: 'Unknown', expire: 'Unlimited', status: '' };
+    return { name: 'Unknown', expire: 'Unlimited', status: '', pin: '' };
   }
 
   let js = rawProfile.js || rawProfile;
@@ -702,7 +704,7 @@ function extractMACProfile(rawProfile) {
     try { js = JSON.parse(js); } catch(e) { js = rawProfile; }
   }
   if (!js || typeof js !== 'object') {
-    return { name: 'Unknown', expire: 'Unlimited', status: '' };
+    return { name: 'Unknown', expire: 'Unlimited', status: '', pin: '' };
   }
 
   // EXTRACT NAME
@@ -775,10 +777,35 @@ function extractMACProfile(rawProfile) {
   if (status === 'false' || status === '0') status = 'Inactive';
   if (js.blocked === 1 || js.blocked === true || js.blocked === '1') status = 'Blocked';
 
+  // EXTRACT PARENTAL PIN
+  const pinFields = ['parent_password','parental_password','parent_pwd','pin','parental_pin'];
+  let pin = '';
+  for (const f of pinFields) {
+    if (js[f] !== undefined && js[f] !== null && js[f] !== '' && js[f] !== 0) {
+      pin = String(js[f]);
+      break;
+    }
+  }
+  if (!pin) {
+    const nestedPaths = [js.user, js.account, js.subscriber, js.profile, js.data];
+    for (const obj of nestedPaths) {
+      if (obj && typeof obj === 'object') {
+        for (const f of pinFields) {
+          if (obj[f] !== undefined && obj[f] !== null && obj[f] !== '' && obj[f] !== 0) {
+            pin = String(obj[f]);
+            break;
+          }
+        }
+        if (pin) break;
+      }
+    }
+  }
+
   return {
     name: name || 'Unknown',
     expire: fmtExpDate(expireRaw),
-    status: status
+    status: status,
+    pin: pin
   };
 }
 
@@ -808,12 +835,14 @@ function showAccountInfo(type, data) {
     const isExpired = profile.expire.includes('EXPIRED');
     const isWarn = profile.expire.includes('hari') && !isExpired;
     const statusClass = isExpired ? 'danger' : (profile.status === 'Active' ? 'ok' : '');
+    const pinHtml = profile.pin ? `<div class="acc-item"><span class="acc-label">PIN:</span><span class="acc-val">${esc(profile.pin)}</span></div>` : '';
 
     row.innerHTML = `
       <div class="acc-item"><span class="acc-label">Account:</span><span class="acc-val">${esc(profile.name)}</span></div>
       <div class="acc-item"><span class="acc-label">MAC:</span><span class="acc-val">${esc(data.mac || '')}</span></div>
       <div class="acc-item"><span class="acc-label">Status:</span><span class="acc-val ${statusClass}">${esc(profile.status || '—')}</span></div>
       <div class="acc-item"><span class="acc-label">Expired:</span><span class="acc-val ${isExpired?'danger':(isWarn?'warn':'')}">${esc(profile.expire)}</span></div>
+      ${pinHtml}
     `;
     el.style.display = 'block';
   } else {
@@ -896,16 +925,20 @@ async function doLoad() {
     } else if(m==='mac') {
       const portal = document.getElementById('mac-prt').value.trim();
       const mac    = document.getElementById('mac-adr').value.trim().toUpperCase();
+      const includeAdult = document.getElementById('mac-adult').checked;
       if(!portal||!mac) throw new Error('Portal URL dan MAC wajib diisi');
 
       setP(15,'🔄 MAC Auth...');
       const authR = await api({action:'mac_auth', portal, mac});
       showAccountInfo('mac', authR);
       setP(35,'✓ Auth OK — mengambil channel...');
-      const chanR = await api({action:'mac_channels',
-                               portal: authR.portal,
-                               mac: authR.mac,
-                               token: authR.token||''});
+      const chanR = await api({
+        action: 'mac_channels',
+        portal: authR.portal,
+        mac: authR.mac,
+        token: authR.token || '',
+        include_adult: includeAdult
+      });
       ch = chanR.channels;
       setP(85,`${ch.length.toLocaleString()} channel`);
 
